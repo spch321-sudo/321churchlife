@@ -27,7 +27,7 @@
 <div id="toast" class="toast"></div>
 <script>
 /* 321教會生活 · core (ES5) */
-var APPVER = '1.1.202610051002';
+var APPVER = '1.2.202610051234';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -176,7 +176,8 @@ function render() {
 document.documentElement.setAttribute('data-lang', L());
 document.documentElement.style.setProperty('--fs', S.set.fs + 'px');
 if (S.set.theme) document.documentElement.setAttribute('data-theme', S.set.theme); else document.documentElement.removeAttribute('data-theme');
-BUSY = !!(R.page && R.page.t === 'lesson');
+BUSY = !!(R.page && (R.page.t === 'lesson' || R.page.t === 'studio')) || !!(window.MX && MX.busy());
+if (window.MX && !(R.page && R.page.t === 'studio')) MX.leave();
 var app = $('#app');
 if (!S.lang || !S.mode) { app.innerHTML = vOnboard(); $('#tabbar').style.display = 'none'; $('#fab').style.display = 'none'; return; }
 $('#tabbar').style.display = ''; $('#fab').style.display = '';
@@ -1220,7 +1221,7 @@ ctx.fillText(sign, W / 2, H - pad * .72 - Math.round(18 * F));
 if (photoBy) { ctx.font = Math.round(16 * F) + 'px ' + sans; ctx.globalAlpha = .7; ctx.fillText('Photo: ' + photoBy + ' / Pexels', W / 2, H - pad * .38); ctx.globalAlpha = 1; }
 }
 function chipRow(act, list, cur, attr) { var b = '<div class="chips" style="flex-wrap:wrap">'; eachA(list, function (x) { b += '<button class="chip' + (String(cur) === String(x[0]) ? ' on' : '') + '" data-act="' + act + '" data-' + attr + '="' + x[0] + '">' + x[1] + '</button>'; }); return b + '</div>'; }
-function openStudio(c) { stopAll(); closeHSheet(); if (XZ.open) closeXz(); studio = { t: c.t || '', ref: c.ref || '', n: c.n || '', plain: !!c.plain }; if (R.page && R.page.t === 'studio') render(); else open_({ t: 'studio' }); }
+function openStudio(c) { stopAll(); closeHSheet(); if (XZ.open) closeXz(); studio = { t: c.t || '', ref: c.ref || '', n: c.n || '', n0: c.n || '', plain: !!c.plain }; if (R.page && R.page.t === 'studio') render(); else open_({ t: 'studio' }); }
 function vStudio() {
 if (!studio) return back();
 var c = studio, b = topbar(T('studioT'), true) + '<div class="cardpv" id="cardPv"></div>' +
@@ -1233,13 +1234,17 @@ var fs = []; eachA(CARD_FS, function (f) { fs.push([f[0], T(f[1])]); }); b += '<
 b += '<p class="eyebrow">' + T('cPhoto') + '</p><div class="row wrap" style="gap:8px"><button class="btn sm" data-act="cphoto">' + T('pickPhoto') + '</button><button class="btn sm" data-act="cpexels">' + T('pexels') + '</button>' + (photoImg ? '<button class="btn sm" style="color:var(--bad)" data-act="cnophoto">' + T('noPhoto') + '</button>' : '') + '<input type="file" id="cphotoIn" accept="image/*" style="display:none"></div></div><div class="card">';
 b += '<div class="q"><label>' + T('cText') + '</label><textarea data-c="t">' + esc(c.t) + '</textarea></div>';
 b += '<div class="q"><label>' + T('cRef') + '</label><input type="text" data-c="ref" value="' + esc(c.ref) + '"></div>';
-b += '<div class="q"><label>' + T('cNote') + '</label><textarea data-c="n" placeholder="' + esc(T('cNotePH')) + '">' + esc(c.n) + '</textarea></div>';
+b += '<div class="q"><label>' + T('cNote') + '</label><textarea data-c="n" placeholder="' + esc(T('cNotePH')) + '">' + esc(c.n) + '</textarea><div id="mxNote"></div></div>';
 b += '<div class="q"><label>' + T('cTo') + '</label><input type="text" data-cs="to" value="' + esc(S.card.to) + '" placeholder="' + esc(T('cToPH')) + '"></div>';
 b += '<div class="q"><label>' + T('cTop') + '</label><input type="text" data-cs="top" value="' + esc(S.card.top) + '" placeholder="' + esc(T('fellowshipName')) + '"></div>';
-b += '<div class="q"><label>' + T('cSignL') + '</label><input type="text" data-cs="sign" value="' + esc(S.card.sign) + '" placeholder="' + esc(T('cardBless')) + '"></div></div>';
-var y = window.scrollY; setApp(b); window.scrollTo(0, y); renderCard();
+b += '<div class="q"><label>' + T('cSignL') + '</label><input type="text" data-cs="sign" value="' + esc(S.card.sign) + '" placeholder="' + esc(T('cardBless')) + '"></div></div><div id="mxBox"></div>';
+var y = window.scrollY; setApp(b); window.scrollTo(0, y); renderCard(); loadMedia();
 eachA(qa('[data-c],[data-cs]', $('#app')), function (e) { e.oninput = function () { var k = e.getAttribute('data-c'); if (k) studio[k] = e.value; else { S.card[e.getAttribute('data-cs')] = e.value; save(); } clearTimeout(vStudio._t); vStudio._t = setTimeout(renderCard, 250); }; });
 $('#cphotoIn').onchange = function () { var f = this.files && this.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function () { var im = new Image(); im.onload = function () { photoImg = im; photoBy = ''; render(); }; im.onerror = function () { toast(T('photoBad')); }; im.src = rd.result; }; rd.readAsDataURL(f); };
+}
+function loadMedia() {
+if (window.MX) return MX.paint(); if (loadMedia.on) return; loadMedia.on = 1;
+var sc = document.createElement('script'); sc.src = 'media.js?v=' + APPVER; sc.onload = function () { if (window.MX && $('#mxBox')) MX.paint(); }; sc.onerror = function () { loadMedia.on = 0; }; document.body.appendChild(sc);
 }
 function renderCard() { var sz = CARD_SIZES[S.card.size] || CARD_SIZES.t, cv = document.createElement('canvas'); drawCard(cv, studio, sz[0], sz[1]); try { cardImg = cv.toDataURL('image/png'); } catch (e) { cardImg = null; toast(T('photoBad')); } var box = $('#cardPv'); if (box && cardImg) box.innerHTML = '<img src="' + cardImg + '" alt="">'; }
 function cardBlob(url) { var b = atob(url.split(',')[1]), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return new Blob([a], { type: 'image/png' }); }

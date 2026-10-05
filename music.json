@@ -1,0 +1,214 @@
+{
+ "songs": [
+  {
+   "f": "2_荣耀归于真神_os.mp3",
+   "no": 2,
+   "n": "榮耀歸於真神",
+   "ne": "To God Be the Glory",
+   "tag": "讚美"
+  },
+  {
+   "f": "19_诸天赞美_o.mp3",
+   "no": 19,
+   "n": "諸天讚美",
+   "ne": "The Heavens Declare",
+   "tag": "讚美"
+  },
+  {
+   "f": "20_上主是我坚固保障o.mp3",
+   "no": 20,
+   "n": "上主是我堅固保障",
+   "ne": "A Mighty Fortress Is Our God",
+   "tag": "信靠"
+  },
+  {
+   "f": "33_颂赞主圣名o.mp3",
+   "no": 33,
+   "n": "頌讚主聖名",
+   "ne": "Praise His Holy Name",
+   "tag": "讚美"
+  },
+  {
+   "f": "37_救主耶穌萬福恩源o.mp3",
+   "no": 37,
+   "n": "救主耶穌萬福恩源",
+   "ne": "Come, Thou Fount of Every Blessing",
+   "tag": "讚美"
+  },
+  {
+   "f": "140_奇异恩典o.mp3",
+   "no": 140,
+   "n": "奇異恩典",
+   "ne": "Amazing Grace",
+   "tag": "恩典"
+  },
+  {
+   "f": "143_无量仁慈无量恩o.mp3",
+   "no": 143,
+   "n": "無量仁慈無量恩",
+   "ne": "Grace Greater Than Our Sin",
+   "tag": "恩典"
+  },
+  {
+   "f": "147_当转眼仰望耶稣o.mp3",
+   "no": 147,
+   "n": "當轉眼仰望耶穌",
+   "ne": "Turn Your Eyes upon Jesus",
+   "tag": "信靠"
+  },
+  {
+   "f": "148_我心渴慕o.mp3",
+   "no": 148,
+   "n": "我心渴慕",
+   "ne": "As the Deer",
+   "tag": "渴慕"
+  },
+  {
+   "f": "158_今有一处流血之泉o.mp3",
+   "no": 158,
+   "n": "今有一處流血之泉",
+   "ne": "There Is a Fountain",
+   "tag": "救恩"
+  },
+  {
+   "f": "219_信靠耶稣何等甜蜜o.mp3",
+   "no": 219,
+   "n": "信靠耶穌何等甜蜜",
+   "ne": "'Tis So Sweet to Trust in Jesus",
+   "tag": "信靠"
+  },
+  {
+   "f": "222_重担皆脱下在各各他_o.mp3",
+   "no": 222,
+   "n": "重擔皆脫下在各各他",
+   "ne": "Burdens Are Lifted at Calvary",
+   "tag": "安慰"
+  },
+  {
+   "f": "230_我平时当靠救主o.mp3",
+   "no": 230,
+   "n": "我平時當靠救主",
+   "ne": "I Must Tell Jesus",
+   "tag": "安慰"
+  },
+  {
+   "f": "237_平安有时如宁静河o.mp3",
+   "no": 237,
+   "n": "平安有時如寧靜河",
+   "ne": "It Is Well with My Soul",
+   "tag": "安慰"
+  },
+  {
+   "f": "244_更像我恩主_o.mp3",
+   "no": 244,
+   "n": "更像我恩主",
+   "ne": "More Like the Master",
+   "tag": "成聖"
+  },
+  {
+   "f": "255_我时刻需要你o.mp3",
+   "no": 255,
+   "n": "我時刻需要你",
+   "ne": "I Need Thee Every Hour",
+   "tag": "禱告"
+  },
+  {
+   "f": "269_与主接近o.mp3",
+   "no": 269,
+   "n": "與主接近",
+   "ne": "Nearer, Still Nearer",
+   "tag": "渴慕"
+  },
+  {
+   "f": "270_宝贵祷告良辰o.mp3",
+   "no": 270,
+   "n": "寶貴禱告良辰",
+   "ne": "Sweet Hour of Prayer",
+   "tag": "禱告"
+  },
+  {
+   "f": "271_不住祷告o.mp3",
+   "no": 271,
+   "n": "不住禱告",
+   "ne": "Pray Without Ceasing",
+   "tag": "禱告"
+  },
+  {
+   "f": "276_祈祷使我常得胜o.mp3",
+   "no": 276,
+   "n": "祈禱使我常得勝",
+   "ne": "Prayer Brings Victory",
+   "tag": "禱告"
+  },
+  {
+   "f": "278_祷告良辰o.mp3",
+   "no": 278,
+   "n": "禱告良辰",
+   "ne": "Sweet Hour of Prayer",
+   "tag": "禱告"
+  },
+  {
+   "f": "285_耶稣领我o.mp3",
+   "no": 285,
+   "n": "耶穌領我",
+   "ne": "He Leadeth Me",
+   "tag": "信靠"
+  },
+  {
+   "f": "296_每一天o.mp3",
+   "no": 296,
+   "n": "每一天",
+   "ne": "Day by Day",
+   "tag": "信靠"
+  },
+  {
+   "f": "360_赞美我天父o.mp3",
+   "no": 360,
+   "n": "讚美我天父",
+   "ne": "Praise My Heavenly Father",
+   "tag": "讚美"
+  },
+  {
+   "f": "369_唯有耶稣o.mp3",
+   "no": 369,
+   "n": "唯有耶穌",
+   "ne": "Jesus Only",
+   "tag": "渴慕"
+  },
+  {
+   "f": "382_耶稣爱我o.mp3",
+   "no": 382,
+   "n": "耶穌愛我",
+   "ne": "Jesus Loves Me",
+   "tag": "安慰"
+  },
+  {
+   "f": "393_都归耶稣o.mp3",
+   "no": 393,
+   "n": "都歸耶穌",
+   "ne": "All to Jesus",
+   "tag": "奉獻"
+  },
+  {
+   "f": "433_感恩歌o.mp3",
+   "no": 433,
+   "n": "感恩歌",
+   "ne": "Thanksgiving Hymn",
+   "tag": "感恩"
+  },
+  {
+   "f": "458_我已经与基督_o.mp3",
+   "no": 458,
+   "n": "我已經與基督",
+   "ne": "I Have Been Crucified with Christ",
+   "tag": "成聖"
+  },
+  {
+   "f": "466_愿那灵火复兴我_os.mp3",
+   "no": 466,
+   "n": "願那靈火復興我",
+   "ne": "Revive Us Again",
+   "tag": "復興"
+  }
+ ]
+}

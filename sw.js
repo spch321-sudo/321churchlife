@@ -1,6 +1,6 @@
 /* 321教會生活 Service Worker */
-var V = 'cl321-1.1.202610051002';
-var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json', './lang-zs.json', './lang-en.json'];
+var V = 'cl321-1.2.202610051234';
+var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json', './lang-zs.json', './lang-en.json', './media.js'];
 self.addEventListener('install', function (e) { self.skipWaiting(); e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); })['catch'](function () { })); });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== V; }).map(function (k) { return caches['delete'](k); })); }).then(function () { return self.clients.claim(); }));
