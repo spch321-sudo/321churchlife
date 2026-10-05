@@ -1,5 +1,5 @@
 /* 321教會生活 Service Worker */
-var V = 'cl321-1.0.202610050531';
+var V = 'cl321-1.0.202610050831';
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json'];
 self.addEventListener('install', function (e) { self.skipWaiting(); e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); })['catch'](function () { })); });
 self.addEventListener('activate', function (e) {
