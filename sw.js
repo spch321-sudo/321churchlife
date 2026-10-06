@@ -4,8 +4,8 @@
    ‧ activate：刪舊快取、clients.claim，並通知所有頁面；背景中的舊頁面直接重新導向成新版
      （連「沒有更新程式碼的舊版頁面」也能被帶到新版）
    ‧ fetch：HTML／JS／JSON 網路優先（no-cache），離線才用快取；圖片快取優先；影音不攔截（Range 請求） */
-var V = 'cl321-1.2.202610061559';
-var VER = '1.2.202610061559';
+var V = 'cl321-1.2.202610062219';
+var VER = '1.2.202610062219';
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json', './lang-zs.json', './lang-en.json', './media.js'];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
