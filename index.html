@@ -26,7 +26,7 @@
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610061526';
+var APPVER = '1.2.202610061559';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -963,9 +963,8 @@ var TTS_FIX = [
 ];
 var SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=';
 var BK_ZH = '亞:撒迦利亞書|代上:歷代志上|代下:歷代志下|以弗所:以弗所書|以弗所書|以斯帖:以斯帖記|以斯帖記|以斯拉:以斯拉記|以斯拉記|以西結:以西結書|以西結書|以賽亞:以賽亞書|以賽亞書|伯:約伯記|但:但以理書|但以理:但以理書|但以理書|何:何西阿書|何西阿:何西阿書|何西阿書|使徒行傳|來:希伯來書|俄:俄巴底亞書|俄巴底亞:俄巴底亞書|俄巴底亞書|傳:傳道書|傳道書|出:出埃及記|出埃及:出埃及記|出埃及記|列王紀上|列王紀下|利:利未記|利未記|創:創世記|創世記|加:加拉太書|加拉太:加拉太書|加拉太書|可:馬可福音|哀:耶利米哀歌|哈:哈巴谷書|哈巴谷:哈巴谷書|哈巴谷書|哈該書|哥林多前:哥林多前書|哥林多前書|哥林多後:哥林多後書|哥林多後書|啟:啟示錄|啟示錄|士:士師記|士師記|多:提多書|太:馬太福音|尼:尼希米記|尼希米:尼希米記|尼希米記|希伯來:希伯來書|希伯來書|帖前:帖撒羅尼迦前書|帖後:帖撒羅尼迦後書|帖撒羅尼迦前:帖撒羅尼迦前書|帖撒羅尼迦前書|帖撒羅尼迦後:帖撒羅尼迦後書|帖撒羅尼迦後書|弗:以弗所書|彌:彌迦書|彌迦書|彼前:彼得前書|彼後:彼得後書|彼得前:彼得前書|彼得前書|彼得後:彼得後書|彼得後書|徒:使徒行傳|得:路得記|拉:以斯拉記|拿:約拿書|提前:提摩太前書|提多書|提後:提摩太後書|提摩太前:提摩太前書|提摩太前書|提摩太後:提摩太後書|提摩太後書|摩:阿摩司書|撒上:撒母耳記上|撒下:撒母耳記下|撒母耳記上|撒母耳記下|撒迦利亞:撒迦利亞書|撒迦利亞書|斯:以斯帖記|書:約書亞記|林前:哥林多前書|林後:哥林多後書|歌:雅歌|歌羅西:歌羅西書|歌羅西書|歷代志上|歷代志下|民:民數記|民數記|猶:猶大書|猶大書|王上:列王紀上|王下:列王紀下|珥:約珥書|瑪:瑪拉基書|瑪拉基:瑪拉基書|瑪拉基書|申:申命記|申命記|番:西番雅書|箴:箴言|箴言|約:約翰福音|約一:約翰一書|約三:約翰三書|約二:約翰二書|約亞:約書亞記|約伯記|約參:約翰三書|約壹:約翰一書|約拿書|約書亞記|約珥書|約翰一:約翰一書|約翰一書|約翰三:約翰三書|約翰三書|約翰二:約翰二書|約翰二書|約翰福音|約貳:約翰二書|結:以西結書|羅:羅馬書|羅馬書|耶:耶利米書|耶利米:耶利米書|耶利米哀歌|耶利米書|腓:腓立比書|腓利門:腓利門書|腓利門書|腓立比:腓立比書|腓立比書|西:歌羅西書|西番雅:西番雅書|西番雅書|詩:詩篇|詩篇|該:哈該書|賽:以賽亞書|路:路加福音|路加福音|路得記|那鴻書|門:腓利門書|阿摩司:阿摩司書|阿摩司書|雅:雅各書|雅各書|雅歌|馬可福音|馬太福音|鴻:那鴻書';
-var BK_ZS = '书:约书亚记|亚:撒迦利亚书|代上:历代志上|代下:历代志下|以弗所:以弗所书|以弗所书|以斯帖:以斯帖记|以斯帖记|以斯拉:以斯拉记|以斯拉记|以西结:以西结书|以西结书|以赛亚:以赛亚书|以赛亚书|传:传道书|传道书|伯:约伯记|但:但以理书|但以理:但以理书|但以理书|何:何西阿书|何西阿:何西阿书|何西阿书|使徒行传|俄:俄巴底亚书|俄巴底亚:俄巴底亚书|俄巴底亚书|出:出埃及记|出埃及:出埃及记|出埃及记|列王纪上|列王纪下|创:创世记|创世记|利:利未记|利未记|加:加拉太书|加拉太:加拉太书|加拉太书|历代志上|历代志下|可:马可福音|启:启示录|启示录|哀:耶利米哀歌|哈:哈巴谷书|哈巴谷:哈巴谷书|哈巴谷书|哈该书|哥林多前:哥林多前书|哥林多前书|哥林多后:哥林多后书|哥林多后书|士:士师记|士师记|多:提多书|太:马太福音|尼:尼希米记|尼希米:尼希米记|尼希米记|希伯来:希伯来书|希伯来书|帖前:帖撒罗尼迦前书|帖后:帖撒罗尼迦后书|帖撒罗尼迦前:帖撒罗尼迦前书|帖撒罗尼迦前书|帖撒罗尼迦后:帖撒罗尼迦后书|帖撒罗尼迦后书|弗:以弗所书|弥:弥迦书|弥迦书|彼前:彼得前书|彼后:彼得后书|彼得前:彼得前书|彼得前书|彼得后:彼得后书|彼得后书|徒:使徒行传|得:路得记|拉:以斯拉记|拿:约拿书|提前:提摩太前书|提后:提摩太后书|提多书|提摩太前:提摩太前书|提摩太前书|提摩太后:提摩太后书|提摩太后书|摩:阿摩司书|撒上:撒母耳记上|撒下:撒母耳记下|撒母耳记上|撒母耳记下|撒迦利亚:撒迦利亚书|撒迦利亚书|斯:以斯帖记|来:希伯来书|林前:哥林多前书|林后:哥林多后书|歌:雅歌|歌罗西:歌罗西书|歌罗西书|民:民数记|民数记|犹:犹大书|犹大书|王上:列王纪上|王下:列王纪下|玛:玛拉基书|玛拉基:玛拉基书|玛拉基书|珥:约珥书|申:申命记|申命记|番:西番雅书|箴:箴言|箴言|约:约翰福音|约一:约翰一书|约三:约翰三书|约书亚记|约二:约翰二书|约亚:约书亚记|约伯记|约参:约翰三书|约壹:约翰一书|约拿书|约珥书|约翰一:约翰一书|约翰一书|约翰三:约翰三书|约翰三书|约翰二:约翰二书|约翰二书|约翰福音|约贰:约翰二书|结:以西结书|罗:罗马书|罗马书|耶:耶利米书|耶利米:耶利米书|耶利米书|耶利米哀歌|腓:腓立比书|腓利门:腓利门书|腓利门书|腓立比:腓立比书|腓立比书|西:歌罗西书|西番雅:西番雅书|西番雅书|诗:诗篇|诗篇|该:哈该书|赛:以赛亚书|路:路加福音|路加福音|路得记|那鸿书|门:腓利门书|阿摩司:阿摩司书|阿摩司书|雅:雅各书|雅各书|雅歌|马可福音|马太福音|鸿:那鸿书';
 var BKM = {};
-function bookMap() { var k = isZS() ? 'zs' : 'zh'; if (BKM[k]) return BKM[k]; var m = {}; eachA((k === 'zs' ? BK_ZS : BK_ZH).split('|'), function (p) { var a = p.split(':'); m[a[0]] = a[1] || a[0]; }); return (BKM[k] = m); }
+function bookMap() { var k = isZS() ? 'zs' : 'zh'; if (BKM[k]) return BKM[k]; var m = {}; eachA((k === 'zs' ? T('bkzs') : BK_ZH).split('|'), function (p) { var a = p.split(':'); m[a[0]] = a[1] || a[0]; }); return (BKM[k] = m); }
 function ttsRef(x) {
 return String(x || '').replace(/([^\s\d:：，。、；（）「」！？]{1,12}|[1-3]?\s?[A-Z][a-z]+\.?(?: of [A-Z][a-z]+)?)\s?(\d+)[:：](\d+)(?:\s*[–\-~～至]\s*(\d+))?/g, function (m, bk, c, v, v2) {
 if (isEN()) return bk.replace(/\.$/, '') + ' chapter ' + c + (v2 ? ' verses ' + v + ' to ' + v2 : ' verse ' + v);
@@ -1114,10 +1113,21 @@ return trim(mdTableMap(String(x || ''), function (head, rows) { var ls = [], hh 
 .replace(/^> ?/gm, '').replace(/^---+$/gm, '').replace(/^[-*] /gm, '・').replace(/`+/g, '').replace(/\n{3,}/g, '\n\n'));
 }
 var NUMZH = ['第一', '第二', '第三', '第四', '第五', '第六', '第七', '第八', '第九', '第十'], NUMEN = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+var CNUM = '一二三四五六七八九十';
 function endP(t) { t = trim(t); return !t ? '' : (/[。！？.!?：:」』”]$/.test(t) ? t : t + (isEN() ? '.' : '。')); }
+function mdTok(t) {
+var m, b = t.match(/^\*\*([^*]+)\*\*[：:]?$/), u = b ? trim(b[1]) : t;
+if ((m = u.match(/^(\d{1,2})[.、）)．]\s*(.+)$/)) || (m = u.match(/^[（(]?([一二三四五六七八九十])[)）、.．]\s*(.+)$/))) {
+var n = /\d/.test(m[1]) ? +m[1] : CNUM.indexOf(m[1]) + 1; return { k: 'li', n: n, t: m[2], hd: !!b };
+}
+if ((m = t.match(/^(?:[-*+]\s+|・\s*|•\s*)(.+)$/))) return { k: 'li', n: 0, t: m[1] };
+return { k: 'p', t: t };
+}
+var LEADW = /^(首先|其次|另外|還有|还有|再來|再来|最後|最后|第[一二三四五六七八九十]|一方面|另一方面|同時|同时|此外|所以|因此|First|Second|Third|Also|Next|Finally|Then|Another)/i;
+var STEPW = /步驟|步骤|方法|做法|行動|行动|怎麼做|怎么做|如何|操練|操练|練習|练习|(兩|两|二|三|四|五|六|七|幾|几)(個|个|件|點|点|步|方面|種|种)|steps?|ways|how to|practices|things/i;
 function mdSpeak(md) {
-var zh = !isEN(), nh = 0, nq = 0, li = 0;
-var src = mdTableMap(String(md || '').replace(EMOJI_RE, ''), function (head, rows) {
+var zh = !isEN(), nq = 0, SP = zh ? '' : ' ';
+var src = mdTableMap(String(md || '').replace(/(\d)️?⃣/g, '$1. ').replace(EMOJI_RE, ''), function (head, rows) {
 var out = [zh ? '我們用一個對照來整理。' : 'Let us lay this out side by side.'];
 eachA(rows, function (r, ri) {
 var p = [], lead = trim(r[0] || '');
@@ -1125,28 +1135,94 @@ for (var j = 1; j < r.length; j++) { var c = trim(r[j] || ''), hd = trim(head[j]
 var pre = rows.length > 1 && ri === rows.length - 1 ? (zh ? '最後，' : 'Finally, ') : '';
 out.push(endP(pre + (lead ? lead + (zh ? '：' : ': ') : '') + p.join(zh ? '，' : '; ')));
 });
-return out.join('\n');
+return '\u0001' + out.join('\n\u0001');
 });
-var lines = src.split('\n'), res = [];
-eachA(lines, function (ln) {
+var tk = [];
+eachA(src.split('\n'), function (ln) {
 var t = trim(ln), m;
-if (!t || /^---+$/.test(t)) { li = 0; return; }
-if ((m = t.match(/^#{1,6}\s*(.+)$/))) {
-var h = trim(m[1].replace(/[*_`]/g, '').replace(/[：:]$/, '')); li = 0;
-if (/想更多|延伸|多想|再想|深思|Think (more|further)|Going deeper/i.test(h)) res.push(zh ? '如果想更多一點，可以這樣想。' : 'If you want to think further, consider this.');
-else if (/禱告|祷告|Pray/i.test(h)) res.push(zh ? '讓我們一起禱告。' : 'Let us pray together.');
-else res.push(zh ? (nh++ ? '接下來談「' + h + '」。' : '先談「' + h + '」。') : (nh++ ? 'Next, let us look at ' + h + '.' : 'Let us talk about ' + h + '.'));
-return;
-}
-if ((m = t.match(/^>\s?(.*)$/))) {
-var q = trim(m[1]); li = 0; if (!q) return;
-var scr = /[「『“"]/.test(q) || /\d+\s*[:：]\s*\d+/.test(q);
-res.push((zh ? (scr ? '聖經說：' : (nq++ ? '還有一句：' : '有一句話特別要記住：')) : (scr ? 'Scripture says: ' : (nq++ ? 'And another: ' : 'Here is the line to remember: '))) + endP(q));
-return;
-}
-if ((m = t.match(/^(?:[-*・]|\d+[.、）)])\s*(.+)$/))) { res.push((li < 10 ? (zh ? NUMZH[li] + '，' : NUMEN[li] + ', ') : '') + endP(m[1])); li++; return; }
-li = 0; res.push(endP(t));
+if (!t || /^---+$/.test(t)) { tk.push({ k: 'gap' }); return; }
+if (t.charAt(0) === '\u0001') { tk.push({ k: 'raw', t: t.slice(1) }); return; }
+if ((m = t.match(/^#{1,6}\s*(.+)$/))) { tk.push({ k: 'h', t: trim(m[1].replace(/[*_`]/g, '').replace(/[：:]$/, '')) }); return; }
+if ((m = t.match(/^>\s?(.*)$/))) { tk.push({ k: 'q', t: trim(m[1]) }); return; }
+tk.push(mdTok(t));
 });
+var hs = [], i, j;
+for (i = 0; i < tk.length; i++) if (tk[i].k === 'h' && !/想更多|延伸|多想|再想|深思|Think (more|further)|Going deeper|禱告|祷告|Pray/i.test(tk[i].t)) hs.push(i);
+var grp = [], cur = null, numG = null, nCnt = 0;
+for (i = 0; i < tk.length; i++) if (tk[i].k === 'li' && tk[i].n) nCnt++;
+for (i = 0; i < tk.length; i++) {
+var x = tk[i];
+if (x.k === 'gap') continue;
+if (x.k === 'h') { cur = numG = null; continue; }
+if (x.k === 'li' && x.n) {
+if (!numG || x.n !== numG.last + 1) { numG = { items: [], intro: introOf(i), num: true }; grp.push(numG); }
+numG.items.push(i); numG.last = x.n; x.g = numG; cur = null; continue;
+}
+if (x.k === 'li') {
+if (!cur || cur.lastI !== prevNonGap(i)) { cur = { items: [], intro: introOf(i), num: false }; grp.push(cur); }
+cur.items.push(i); cur.lastI = i; x.g = cur; continue;
+}
+cur = null;
+}
+function prevNonGap(k) { for (k--; k >= 0; k--) if (tk[k].k !== 'gap') return k; return -1; }
+function introOf(k) { var q = prevNonGap(k); return q >= 0 && tk[q].k !== 'li' ? tk[q].t || '' : ''; }
+eachA(grp, function (g) {
+var n = g.items.length, short = true, lab = 0, scr = 0;
+eachA(g.items, function (k) {
+var t = tk[k].t, plain = mdStrip(t);
+if (plain.length > (zh ? 14 : 48) || /[。！？.!?；;，,]/.test(plain.slice(0, -1))) short = false;
+if (/^\*\*[^*]+\*\*/.test(t) || tk[k].hd) lab++;
+if (/\d+\s*[:：]\s*\d+|[「『“]/.test(t)) scr++;
+});
+g.mode = g.num && nCnt > 1 ? 'ord' : n < 2 ? 'one' : scr === n ? 'plain' : (g.num || STEPW.test(g.intro)) ? 'ord' : lab * 2 >= n ? 'lab' : short ? 'enum' : 'conn';
+g.n = n;
+});
+var res = [], CZ = ['首先，', '另外，', '還有，', '再來，', '同時，'], CE = ['First, ', 'Also, ', 'Next, ', 'On top of that, ', 'Then, '];
+for (i = 0; i < tk.length; i++) {
+var y = tk[i], t = y.t;
+if (y.k === 'gap') continue;
+if (y.k === 'raw') { res.push(t); continue; }
+if (y.k === 'h') {
+if (/想更多|延伸|多想|再想|深思|Think (more|further)|Going deeper/i.test(t)) res.push(zh ? '如果想更多一點，可以這樣想。' : 'If you want to think further, consider this.');
+else if (/禱告|祷告|Pray/i.test(t)) res.push(zh ? '讓我們一起禱告。' : 'Let us pray together.');
+else {
+var hi = hs.indexOf(i), hl = hs.length, w;
+if (hl === 1) w = zh ? '我們來談「' + t + '」。' : 'Let us talk about ' + t + '.';
+else if (hi === 0) w = zh ? '先談「' + t + '」。' : 'Let us start with ' + t + '.';
+else if (hi === hl - 1 && hl > 2) w = zh ? '最後談「' + t + '」。' : 'Finally, ' + t + '.';
+else w = zh ? ['接下來談「', '再來看「', '我們再看「'][(hi - 1) % 3] + t + '」。' : ['Next, let us look at ', 'Then, ', 'Now consider '][(hi - 1) % 3] + t + '.';
+res.push(w);
+}
+continue;
+}
+if (y.k === 'q') {
+if (!t) continue;
+var sc = /[「『“"]/.test(t) || /\d+\s*[:：]\s*\d+/.test(t);
+res.push((zh ? (sc ? '聖經說：' : (nq++ ? '還有一句：' : '有一句話特別要記住：')) : (sc ? 'Scripture says: ' : (nq++ ? 'And another: ' : 'Here is the line to remember: '))) + endP(t));
+continue;
+}
+if (y.k === 'li' && y.g) {
+var g = y.g, ix = g.items.indexOf(i), last = ix === g.n - 1 && g.n > 1, has = LEADW.test(mdStrip(t));
+if (g.mode === 'enum') {
+if (ix === 0) {
+var ws = []; eachA(g.items, function (k) { ws.push(mdStrip(tk[k].t).replace(/[。.]$/, '')); });
+res.push(endP(zh ? (g.n === 2 ? ws.join('和') : ws.slice(0, -1).join('、') + '，還有' + ws[ws.length - 1]) : (g.n === 2 ? ws.join(' and ') : ws.slice(0, -1).join(', ') + ', and ' + ws[ws.length - 1])));
+}
+continue;
+}
+var pre = '';
+if (!has && g.mode === 'ord') { var on = (y.n || ix + 1) - 1; pre = on < 10 ? (zh ? NUMZH[on] + '，' : NUMEN[on] + ', ') : ''; }
+else if (!has && g.mode === 'lab') {
+var lm = t.match(/^\*\*([^*]+?)\*\*\s*[：:—–-]?\s*(.*)$/) || [0, mdStrip(t), ''];
+var L = trim(lm[1]).replace(/[：:]$/, ''), body = trim(lm[2]);
+res.push(endP((zh ? (ix === 0 ? '首先是' : last ? '最後是' : '再來是') + '「' + L + '」' : (ix === 0 ? 'First, ' : last ? 'Finally, ' : 'Next, ') + L) + (body ? (zh ? '，' : ': ') + body : '')));
+continue;
+}
+else if (!has && g.mode === 'conn') pre = last ? (zh ? '最後，' : 'Finally, ') : (zh ? CZ : CE)[ix % 5];
+res.push(endP(pre + t)); continue;
+}
+res.push(endP(t));
+}
 return mdStrip(res.join('\n'));
 }
 function mdToHtml(s) {
