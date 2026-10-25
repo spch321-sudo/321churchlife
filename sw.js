@@ -4,8 +4,8 @@
    ‧ activate：刪舊快取、clients.claim，並通知所有頁面；背景中的舊頁面直接重新導向成新版
      （連「沒有更新程式碼的舊版頁面」也能被帶到新版）
    ‧ fetch：HTML／JS／JSON 網路優先（no-cache），離線才用快取；圖片快取優先；影音不攔截（Range 請求） */
-var V = 'cl321-1.2.202610141107-gx10171750-gxa1019-vp1023';
-var VER = '1.2.202610141107';
+var V = 'cl321-1.2.202610252246-chen';
+var VER = '1.2.202610252246-chen';   /* 必須與 index.html 的 APPVER、version.json 完全一致，否則「已有新版本」會一直跳 */
 var SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json', './lang-zs.json', './lang-en.json', './media.js', './more.js'];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
@@ -15,7 +15,7 @@ self.addEventListener('install', function (e) {
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
-    return Promise.all(ks.filter(function (k) { return k !== V; }).map(function (k) { return caches['delete'](k); }));
+    return Promise.all(ks.filter(function (k) { return k !== V && k.indexOf('cl321-') === 0; }).map(function (k) { return caches['delete'](k); }));
   }).then(function () { return self.clients.claim(); }).then(function () {
     return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   }).then(function (cs) {

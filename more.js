@@ -122,6 +122,45 @@ if (s == null) s = k;
 for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
 return s;
 }
+/* 教會消息自動翻譯成英文（小智 AI）：發佈時一起存英文；英文版畫面遇到沒有英文的消息就先翻來看（存在這支手機） */
+var CHTR_SYS = "You translate church announcements from Chinese into natural, warm, clear English for English-speaking church members. Keep dates, times, numbers, names, URLs, line breaks and list numbering. Fixed terms: 國度321空中團契 = Kingdom 321 Online Fellowship; 主日 = Sunday service; 小組 = small group; 小家 = small group; 同工 = co-worker; 弟兄姊妹 = brothers and sisters; 代禱 = prayer request; 見證 = testimony; 晨讀 = Morning Devotion; 321理念 = the 3-2-1 ideology; 無己 = selflessness; 得勝者 = overcomer; 小智 = Sage. Quote Scripture from the World English Bible. Reply with JSON only: {\"title\":\"...\",\"body\":\"...\"} (empty string when the source part is empty). No commentary.";
+function chTr(title, body, cb) {
+  var done = false, fin = function (r) { if (!done) { done = true; cb(r); } };
+  var ep = (typeof SVC !== 'undefined' && SVC.xz) || 'https://xiaozhi-proxy.spch321.workers.dev';
+  var model = (typeof SVC !== 'undefined' && SVC.model) || 'claude-sonnet-4-6';
+  ajax('POST', ep, { model: model, max_tokens: 2000, system: CHTR_SYS, messages: [{ role: 'user', content: 'TITLE:\n' + (title || '') + '\n\nBODY:\n' + (body || '') }] }, null, function (st, txt) {
+    if (st !== 200) return fin(null);
+    try {
+      var d = JSON.parse(txt), t = '';
+      if (d && d.content && d.content.length) for (var i = 0; i < d.content.length; i++) t += d.content[i].text || '';
+      if (!t) t = (d && (d.reply || d.text || d.message)) || '';
+      var m = /\{[\s\S]*\}/.exec(t), o = m ? JSON.parse(m[0]) : null;
+      if (o && (trim(o.title || '') || trim(o.body || ''))) return fin({ title: trim(o.title || ''), body: trim(o.body || '') });
+    } catch (e) { }
+    fin(null);
+  }, null, 60000);
+}
+var CHTR_BUSY = {};
+function chTrKey(n) { var s = (n.title || '') + '\u0001' + (n.body || ''), h = 0; for (var i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return (n.id || '') + ':' + h; }
+function chEn(n) {
+  if (L() !== 'en' || !n) return null;
+  if (trim(n.title_en || '') || trim(n.body_en || '')) return { title: n.title_en || n.title || '', body: n.body_en || n.body || '' };
+  if (!trim(n.title || '') && !trim(n.body || '')) return null;
+  var k = chTrKey(n), c = {};
+  try { c = JSON.parse(localStorage.getItem('cl321_news_tr') || '{}') || {}; } catch (e) { c = {}; }
+  if (c[k]) return c[k];
+  if (!CHTR_BUSY[k] && navigator.onLine !== false) {
+    CHTR_BUSY[k] = 1;
+    chTr(n.title, n.body, function (r) {
+      if (!r) return;
+      try { var c2 = JSON.parse(localStorage.getItem('cl321_news_tr') || '{}') || {}; c2[k] = r; var ks = Object.keys(c2); if (ks.length > 60) delete c2[ks[0]]; localStorage.setItem('cl321_news_tr', JSON.stringify(c2)); } catch (e) { }
+      try { if (R.page && R.page.t === 'church') vChurch(); else if (typeof chPaint === 'function') chPaint(); } catch (e) { }
+    });
+  }
+  return null;
+}
+function chTi(n) { var e = chEn(n); return e ? e.title : n.title; }
+function chBo(n) { var e = chEn(n); return e ? e.body : n.body; }
 function chErr(e) { return CT('e_' + e) !== 'e_' + e ? CT('e_' + e) : CT('e_net') + (e ? '（' + e + '）' : ''); }
 function chApi(m, path, body, cb) {
 ajax(m, CHURL + path, body, null, function (st, txt) {
@@ -162,7 +201,7 @@ var d = S.chData || {}, u = chUnread(), h = '<div class="card chc" onclick="open
 if (d.plan) h += '<div class="chplan" onclick="event.stopPropagation();open_({t:\'lesson\',w:' + d.plan.w + ',d:' + (d.plan.d || 1) + '})"><span class="xs">' + esc(CT('planT')) + '</span><b>' + esc(chPlanTxt(d.plan)) + '</b><span class="xs">' + esc(CT('goRead')) + ' ›</span></div>';
 if (d.today != null) h += '<p class="sm" style="margin:8px 0 0">🙏 ' + esc(d.today ? CT('todayN', d.today) : CT('today0')) + '</p>';
 var ns = d.news || [];
-for (var i = 0; i < ns.length && i < 2; i++) h += '<p class="sm chline">' + (ns[i].top ? '📌 ' : '') + '<span class="tag">' + esc(chKind(ns[i].kind)) + '</span> ' + esc(ns[i].title || String(ns[i].body || '').slice(0, 30)) + '</p>';
+for (var i = 0; i < ns.length && i < 2; i++) h += '<p class="sm chline">' + (ns[i].top ? '📌 ' : '') + '<span class="tag">' + esc(chKind(ns[i].kind)) + '</span> ' + esc(chTi(ns[i]) || String(chBo(ns[i]) || '').slice(0, 30)) + '</p>';
 return h + '</div>';
 }
 function vChurch() {
@@ -184,7 +223,7 @@ eachA(d.news || [], function (n) { if (!CH.f || n.kind === CH.f) ns.push(n); });
 if (!ns.length) h += '<div class="empty">' + esc(adm ? CT('noNewsAdm') : CT('noNews')) + '</div>';
 eachA(ns, function (n) {
 h += '<div class="card chn' + (n.ts > seen ? ' new' : '') + '"><div class="row sp"><span><span class="tag k-' + esc(n.kind) + '">' + esc(chKind(n.kind)) + '</span>' + (n.top ? ' 📌' : '') + (n.ts > seen ? ' <span class="chdot">' + esc(CT('newTag')) + '</span>' : '') + '</span><span class="xs muted">' + esc(fmtDate(n.ts)) + (n.until ? ' · ' + esc(CT('until', n.until.slice(5).replace('-', '/'))) : '') + '</span></div>' +
-(n.title ? '<p class="h3 chtt">' + esc(n.title) + '</p>' : '') + (n.body ? '<div class="sm chb">' + chLink(n.body) + '</div>' : '') +
+(chTi(n) ? '<p class="h3 chtt">' + esc(chTi(n)) + '</p>' : '') + (chBo(n) ? '<div class="sm chb">' + chLink(chBo(n)) + '</div>' : '') +
 (n.img ? '<img class="chimg" src="' + esc(n.img) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
 '<div class="row chact">' + (n.link ? '<a class="btn" href="' + esc(n.link) + '" target="_blank" rel="noopener">' + esc(CT('openLink')) + '</a>' : '') + '<button class="btn" onclick="chShare(\'' + n.id + '\')">↗ ' + esc(T('share')) + '</button>' +
 (adm ? '<button class="btn" onclick="chEdit(\'' + n.id + '\')">' + esc(CT('edit')) + '</button><button class="btn" id="chd' + n.id + '" onclick="chDel(\'' + n.id + '\')">' + esc(CT('armDel') && CH.armDel === n.id ? CT('armDel') : CT('del')) + '</button>' : '') + '</div></div>';
@@ -233,7 +272,7 @@ sheet('<div class="c"><p class="h2">' + esc(CT('created')) + '</p><p class="mute
 function chInvite() { shareText(CT('inviteTxt', S.ch.name, chUrl(), S.ch.code)); }
 function chShare(id) {
 var n = chFind(id); if (!n) return;
-shareText('【' + S.ch.name + '・' + chKind(n.kind) + '】' + (n.title ? n.title + '\n' : '') + (n.body || '') + (n.link ? '\n' + n.link : '') + '\n\n' + CT('fromApp'));
+shareText('【' + S.ch.name + '・' + chKind(n.kind) + '】' + (chTi(n) ? chTi(n) + '\n' : '') + (chBo(n) || '') + (n.link ? '\n' + n.link : '') + '\n\n' + CT('fromApp'));
 }
 function chFind(id) { var r = null; eachA((S.chData && S.chData.news) || [], function (n) { if (n.id === id) r = n; }); return r; }
 function chLeave() {
@@ -273,7 +312,10 @@ function chSave(id) {
 var it = { id: id, kind: $('#cek').value, title: trim($('#cet').value || ''), body: trim($('#ceb').value || ''), link: trim($('#cel').value || ''), img: trim($('#cei').value || ''), until: $('#ceu').value || '', top: $('#cep').checked ? 1 : 0 };
 if (!it.title && !it.body) return toast(CT('e_empty'));
 if ((it.link && !/^https?:\/\//i.test(it.link)) || (it.img && !/^https?:\/\//i.test(it.img))) return toast(CT('e_url'));
-chAdm('/news', { item: it }, function () { closeSheet(); toast(id ? CT('saved') : CT('published')); S.ch.seen = chMaxTs(S.chData); save(); vChurch(); });
+var go = function () { chAdm('/news', { item: it }, function () { closeSheet(); toast(id ? CT('saved') : CT('published')); S.ch.seen = chMaxTs(S.chData); save(); vChurch(); }); };
+var bt = document.querySelector('#sheet .btn.pri.full') || document.querySelector('.btn.pri.full');
+if (bt) { bt.disabled = true; bt.textContent = L() === 'en' ? 'Translating…' : (L() === 'zs' ? '正在翻译成英文…' : '正在翻譯成英文…'); }
+chTr(it.title, it.body, function (r) { if (r) { it.title_en = r.title; it.body_en = r.body; } if (bt) bt.disabled = false; go(); });
 }
 function chDel(id) {
 if (CH.armDel !== id) { CH.armDel = id; var b = $('#chd' + id); if (b) b.textContent = CT('armDel'); setTimeout(function () { if (CH.armDel === id) { CH.armDel = ''; var b2 = $('#chd' + id); if (b2) b2.textContent = CT('del'); } }, 4000); return; }
