@@ -34,11 +34,13 @@
   const LSK = () => (O.pfx || '') + 'xz2';
   const lg = () => {
     let v = ''; try { v = String(O.lang ? O.lang() : (document.documentElement.getAttribute('lang') || 'zh')); } catch (e) {}
-    if (/^en/i.test(v)) return 'en';
+    if (/^(en|ko)/i.test(v)) return 'en';
     if (/hans|^zs$|^sc$|cn$|^zh-sg/i.test(v)) return 'zs';
     return 'zh';
   };
-  const L3 = (a, b, c) => { const l = lg(); return l === 'en' ? c : (l === 'zs' ? b : a); };
+  const isKo = () => { try { return document.documentElement.getAttribute('lang') === 'ko'; } catch (e) { return false; } };
+  const L3 = (a, b, c) => { const l = lg(); return l === 'en' ? (window.KOT ? window.KOT(c) : c) : (l === 'zs' ? b : a); };
+  const KX = (k, t) => { const o = window.KOXZ; return (isKo() && o && o[k]) ? o[k] : null; };
   const toast = (m, ms) => { try { if (O.toast) return O.toast(m, ms); } catch (e) {} miniToast(m); };
   function miniToast(m) {
     let t = document.getElementById('xz2toast');
@@ -47,10 +49,10 @@
   }
   const AUD_KEYS = D.AUD_KEYS, LEN_KEYS = D.LEN_KEYS, SKBG_KEYS = D.SKBG_KEYS;
   X.AUD_KEYS = AUD_KEYS; X.LEN_KEYS = LEN_KEYS; X.SKBG_KEYS = SKBG_KEYS; X.AUD_ICON = D.AUD_ICON;
-  X.audName = k => (D.NAME[lg()] || D.NAME.zh)[k];
-  X.audHint = k => (D.HINT[lg()] || D.HINT.zh)[k];
-  X.lenName = k => (D.LENNAME[lg()] || D.LENNAME.zh)[k];
-  X.skName = k => (D.SKNAME[lg()] || D.SKNAME.zh)[k];
+  X.audName = k => ((KX('NAME') || D.NAME[lg()] || D.NAME.zh))[k];
+  X.audHint = k => ((KX('HINT') || D.HINT[lg()] || D.HINT.zh))[k];
+  X.lenName = k => ((KX('LENNAME') || D.LENNAME[lg()] || D.LENNAME.zh))[k];
+  X.skName = k => ((KX('SKNAME') || D.SKNAME[lg()] || D.SKNAME.zh))[k];
 
   /* ── 狀態（存 localStorage：pfx+'xz2'） ── */
   function load() {
@@ -99,10 +101,10 @@
   X.skbgSys = () => { if (X.aud() !== 'seeker') return ''; const l = lg(); return (D.SKBG[l] || D.SKBG.zh)[X.skbg()] || ''; };
   X.questions = () => {
     const l = lg(), a = X.aud();
-    if (a === 'seeker') { const b = D.QBANK20SK[X.skbg()]; if (b) return b[l] || b.zh; }
-    const q = D.QBANK20[a]; return q ? (q[l] || q.zh) : [];
+    if (a === 'seeker') { const b = D.QBANK20SK[X.skbg()]; const kb = KX('QBANK20SK'); if (b) return (kb && kb[X.skbg()]) || b[l] || b.zh; }
+    const q = D.QBANK20[a]; const kq = KX('QBANK20'); return q ? ((kq && kq[a]) || q[l] || q.zh) : [];
   };
-  X.followups = () => { const l = lg(); return ((D.FU[l] || D.FU.zh)[X.aud()]) || []; };
+  X.followups = () => { const l = lg(); return (((KX('FU') || D.FU[l] || D.FU.zh))[X.aud()]) || []; };
 
   /* ── 讀者資料（互動聖經 v2.29–2.33，三語） ── */
   const PF_FIELDS = [

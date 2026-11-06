@@ -30,7 +30,7 @@ window.XZM_SC = {'停止':'停止','原回答已不在對話中':'原回答已�
   /* T(繁體, English)；簡體從 window.XZM_SC（build 時由系統 ICU 產生的對照表）查，沒有就用 adapter.toSC */
   function T(zh, en) {
     var l = lang();
-    if (l === 'en') return en;
+    if (l === 'en') return window.KOT ? window.KOT(en) : en;
     if (l === 'sc') {
       var m = window.XZM_SC && window.XZM_SC[zh];
       if (m) return m;
@@ -1074,7 +1074,7 @@ XZM.preset.sage = function (o) {
   }
 
   var A = {
-    lang: function () { var l = document.documentElement.lang || ''; return /^en/i.test(l) ? 'en' : (/Hans|CN/i.test(l) ? 'sc' : 'tc'); },
+    lang: function () { var l = document.documentElement.lang || ''; return /^(en|ko)/i.test(l) ? 'en' : (/Hans|CN/i.test(l) ? 'sc' : 'tc'); },
     toast: function () { },
     msgs: function () { return []; },
     isDone: function () { return false; },
@@ -1354,7 +1354,7 @@ XZM.preset.mix2 = function (o) {
       try {
         if (!window.speechSynthesis) return done();
         var u = new SpeechSynthesisUtterance(text), l = g(function () { return L(); }, 'zh');
-        u.lang = l === 'en' ? 'en-US' : (l === 'zs' ? 'zh-CN' : 'zh-TW'); u.rate = 1;
+        u.lang = document.documentElement.getAttribute('lang') === 'ko' ? 'ko-KR' : l === 'en' ? 'en-US' : (l === 'zs' ? 'zh-CN' : 'zh-TW'); u.rate = 1;
         u.onend = u.onerror = function () { done(); };
         speechSynthesis.speak(u);
       } catch (e) { done(); }
@@ -1441,7 +1441,7 @@ XZM.preset.mix2 = function (o) {
   }
   function textFrom(el) {
     var node = el.closest && el.closest('.xzm'), all = node ? arr(node.querySelectorAll('.xzs')) : [el], i = all.indexOf(el), t = '', j;
-    for (j = Math.max(0, i); j < all.length && t.length < 6000; j++) t += (t && /^en/i.test(document.documentElement.lang || '') ? ' ' : '') + X.sentText(all[j]);
+    for (j = Math.max(0, i); j < all.length && t.length < 6000; j++) t += (t && /^(en|ko)/i.test(document.documentElement.lang || '') ? ' ' : '') + X.sentText(all[j]);
     return t;
   }
   var attach0 = A.marks.attach;
