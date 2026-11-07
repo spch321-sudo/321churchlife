@@ -50,13 +50,13 @@
     return a;
   }
   function ask(texts, lang, cb) {
-    var sys = 'You are a careful translator for a Christian Bible-study app. Translate each numbered sentence into ' + (NAME[lang] || lang) + '. ' +
+    var sys = 'You are a careful translator for a Christian Bible-study app. Translate each numbered sentence into ' + (H().name ? H().name(lang) : (NAME[lang] || lang)) + '. ' +
       'Keep it faithful, warm and natural; keep Bible book names and verse references; use the standard Bible wording of that language for scripture quotations; keep 321 / 920 / 235 and names as they are. ' +
       'Return ONLY a JSON array of strings with exactly ' + texts.length + ' items, in the same order, one translation per input line. No commentary.';
     var user = texts.map(function (t, i) { return (i + 1) + '. ' + t.replace(/\s+/g, ' '); }).join('\n');
     var ac = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = ac ? setTimeout(function () { ac.abort(); }, 60000) : 0;
     fetch(ep(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac ? ac.signal : undefined,
-      body: JSON.stringify({ model: model(), max_tokens: 3000, system: sys, messages: [{ role: 'user', content: user }] }) })
+      body: JSON.stringify(H().nomodel ? { system: sys, messages: [{ role: 'user', content: user }] } : { model: model(), max_tokens: 3000, system: sys, messages: [{ role: 'user', content: user }] }) })
       .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
       .then(function (d) {
         clearTimeout(tm);
