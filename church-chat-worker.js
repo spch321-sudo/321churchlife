@@ -17,6 +17,8 @@
    v2（2026-11-09）：關懷名單——弟兄姊妹自己同意後，把「稱呼、最近完成靈修的日期、
         完成堂數、本週進度」送上來；只有負責人（密碼經 church-news 驗證）看得到名單。
         關掉分享就整筆刪除。不收筆記、畫線、禱告內容。
+   v3（2026-11-09）：今日完成名單——完成當天靈修的弟兄姊妹，名字顯示在教會頁一起歡喜
+        （選擇不顯示名字的人只算人數）；回傳「你是今天第幾位」給獎勵動畫用。保留 30 天。
    ===================================================================== */
 
 const NEWS = 'https://church-news.spch321.workers.dev';
@@ -45,7 +47,10 @@ async function init(db) {
     db.prepare(`CREATE TABLE IF NOT EXISTS church (code TEXT PRIMARY KEY, name TEXT, until INTEGER)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS member (
       code TEXT NOT NULL, dev TEXT NOT NULL, nick TEXT, total INTEGER, last INTEGER, d7 INTEGER,
-      pw INTEGER, pd INTEGER, pn INTEGER, upd INTEGER, PRIMARY KEY (code, dev))`)
+      pw INTEGER, pd INTEGER, pn INTEGER, upd INTEGER, PRIMARY KEY (code, dev))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS done (
+      code TEXT NOT NULL, day TEXT NOT NULL, dev TEXT NOT NULL, nick TEXT, ts INTEGER,
+      PRIMARY KEY (code, day, dev))`)
   ]);
   ready = true;
 }
@@ -78,6 +83,12 @@ async function tag(dev) {
 }
 function clean(s, n) { return String(s || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, n); }
 
+async function todayList(db, code, day) {
+  const rs = await db.prepare('SELECT dev,nick,ts FROM done WHERE code=? AND day=? ORDER BY ts').bind(code, day).all();
+  const out = [];
+  for (const m of rs.results || []) out.push({ nick: m.nick || '', ts: m.ts, who: await tag(m.dev) });
+  return out;
+}
 async function list(db, code, after, dev) {
   let rs;
   if (after > 0) rs = await db.prepare('SELECT id,ts,dev,nick,text,re,del FROM msg WHERE code=? AND id>? ORDER BY id LIMIT 200').bind(code, after).all();
@@ -108,6 +119,10 @@ export default {
       const msgs = await list(db, code, after, dev);
       return J({ ok: true, msgs, now: Date.now() });
     }
+    if (req.method === 'GET' && act === 'today') {
+      const day = clean(url.searchParams.get('day'), 10);
+      return J({ ok: true, day, list: await todayList(db, code, day) });
+    }
     if (req.method !== 'POST') return bad('method', 405);
     let b = {}; try { b = await req.json(); } catch (e) { return bad('json'); }
     const dev = clean(b.dev, 64);
@@ -135,6 +150,19 @@ export default {
       if (m.dev !== dev && !(await leaderOk(code, b.pin))) return bad('forbid', 403);
       await db.prepare('UPDATE msg SET del=1, text=\'\' WHERE id=?').bind(id).run();
       return J({ ok: true });
+    }
+    if (act === 'done') {
+      const day = clean(b.day, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return bad('day');
+      if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
+      const nick = b.hide ? '' : clean(b.nick, 20);
+      const now = Date.now();
+      await db.prepare('INSERT INTO done(code,day,dev,nick,ts) VALUES(?,?,?,?,?) ON CONFLICT(code,day,dev) DO UPDATE SET nick=excluded.nick')
+        .bind(code, day, dev, nick, now).run();
+      if (Math.random() < 0.02) await db.prepare('DELETE FROM done WHERE ts<?').bind(now - 30 * 864e5).run();
+      const all = await todayList(db, code, day), me = await tag(dev);
+      let rank = 0; all.forEach((m, i) => { if (m.who === me) rank = i + 1; });
+      return J({ ok: true, rank, list: all });
     }
     if (act === 'prog') {
       if (!b.share) {

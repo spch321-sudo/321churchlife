@@ -40,7 +40,7 @@ body.crOn .top{top:calc(40px + env(safe-area-inset-top));padding-top:10px}
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109';
+var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -677,7 +677,7 @@ return '<div class="sec card" data-say="' + esc(T('say_' + (SECN[k] || 0))) + '"
 function noteSave(id, f, v) { S.notes[id] = S.notes[id] || {}; S.notes[id][f] = v; S.notes[id].ts = now(); save(); }
 function finishLesson(w, d) {
 var id = lid(w, d), was = !!S.done[id], lv = level();
-S.done[id] = now(); save(); stopSpeak(); if (window.chDone) chDone();
+S.done[id] = now(); save(); stopSpeak(); if (window.chDone) chDone(); if (window.chFinish) chFinish(!was);
 if (!was && level() > lv) { sheet('<div class="c"><div class="lvl" style="justify-content:center"><div class="bdg">' + level() + '</div></div><p class="h2">' + esc(T('lvlUp', T('lvlName' + level()))) + '</p><p class="muted">' + esc(T('lvlName' + level() + '_d')) + '</p><p class="kv">' + esc(T('glory')) + '</p><button class="btn pri full" onclick="closeSheet()">' + esc(T('amen')) + '</button></div>'); }
 else toast(T('doneToast'));
 if (!was && d === 5 && weekDone(w) === 5) setTimeout(function () { toast(T('weekDoneToast')); }, 2300);
