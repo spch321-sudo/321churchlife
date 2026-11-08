@@ -214,6 +214,7 @@ h += '<div class="card chhead"><div class="row sp"><div><p class="eyebrow" style
 h += '<div class="grid2"><div class="tile c"><div class="h2" style="color:var(--brand);margin:0">' + (d.today || 0) + '</div><span class="xs muted">' + esc(CT('todayLbl')) + '</span></div>' +
 (d.plan ? '<div class="tile c" style="cursor:pointer" onclick="open_({t:\'lesson\',w:' + d.plan.w + ',d:' + (d.plan.d || 1) + '})"><span class="xs muted">' + esc(CT('planT')) + '</span><b style="color:var(--brand)">' + esc(T('wkN', d.plan.w) + (d.plan.d ? ' · ' + T('dN', d.plan.d) : '')) + '</b><span class="xs muted">' + esc(T('wt' + d.plan.w)) + '</span></div>' : '<div class="tile c"><span class="xs muted">' + esc(CT('planT')) + '</span><span class="sm muted">' + esc(CT('noPlan')) + '</span></div>') + '</div>';
 if (d.plan && d.plan.note) h += '<p class="sm chnote">「' + esc(d.plan.note) + '」</p>';
+if (window.ccCardHtml) { ccCss(); h += '<div id="ccCard">' + ccCardHtml() + '</div>'; }
 if (adm) h += '<div class="row chadm"><button class="btn pri grow" onclick="chEdit(\'\')">＋ ' + esc(CT('post')) + '</button><button class="btn" onclick="chPlanEd()">' + esc(CT('setPlan')) + '</button><button class="btn" onclick="chMore()">⋯</button></div>';
 var cs = '<button class="chip' + (!CH.f ? ' on' : '') + '" onclick="CH.f=\'\';vChurch()">' + esc(CT('all')) + '</button>';
 eachA(CHK, function (k) { cs += '<button class="chip' + (CH.f === k ? ' on' : '') + '" onclick="CH.f=\'' + k + '\';vChurch()">' + esc(chKind(k)) + '</button>'; });
@@ -232,6 +233,7 @@ h += '<div class="row" style="margin:18px 0 6px">' + (adm ? '' : '<button class=
 h += '<p class="xs muted c">' + esc(CT('privacy')) + '</p>';
 setApp(h);
 var mx = chMaxTs(d); if (mx > (S.ch.seen || 0)) { S.ch.seen = mx; save(); }
+if (window.ccPeek) ccPeek();
 if (now() - CH.at > 60000) chFetch(true, function (j) { CH.off = !j; if (j && R.page && R.page.t === 'church') vChurch(); });
 }
 function chRefresh() { CH.at = 0; chFetch(true, function (j, e) { CH.off = !j; if (!j) toast(chErr(e)); if (R.page && R.page.t === 'church') vChurch(); }); }
@@ -371,3 +373,171 @@ try { history.replaceState(null, '', location.pathname); } catch (e) { }
 if (R.page && R.page.t === 'church') render(); else chPaint();
 document.addEventListener('visibilitychange', function () { if (!document.hidden && S.ch && now() - CH.at > 120000) chFetch(true, function (j) { if (j) chPaint(); }); });
 })();
+/* ── 教會聊天室（v1，2026-11-09）：同一個教會的家人可以聊天互動 ──
+   後端：church-chat.spch321.workers.dev（church-chat-worker.js，Cloudflare D1）
+   只有聊天室開著、畫面在前景時才每 6 秒抓新訊息；負責人登入後可刪除不合宜的訊息。 */
+var CCURL = 'https://church-chat.spch321.workers.dev';
+var CC = { msgs: [], last: 0, timer: 0, busy: 0, re: 0, err: '', unread: 0, uAt: 0, arm: 0, sel: 0 };
+var CCT = {
+zh: { room: '教會聊天室', roomD: '和同一個教會的弟兄姊妹聊天、分享、彼此代禱', open: '進入聊天室', newN: '{0} 則新訊息', ph: '說些什麼…', send: '送出', nickPh: '你的稱呼（大家會看到）', nickNeed: '請先填你的稱呼', empty: '還沒有人說話，來打聲招呼吧！', reply: '回覆', copy: '複製', copied: '已複製', del: '刪除', armDel: '再按一次刪除', deleted: '這則訊息已刪除', replyTo: '回覆 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室還沒開通，請負責人聯絡管理者開通', e_net: '連不上聊天室，請稍後再試', e_slow: '說太快了，等一下再送', e_full: '今天的訊息太多了，明天再聊', e_forbid: '只能刪除自己的訊息', e_empty: '請輸入內容', e_nochurch: '找不到這個教會', tip: '請彼此尊重、用愛心說誠實話；個人隱私與代禱細節請斟酌。負責人可以刪除不合宜的訊息。', leader: '負責人' },
+zs: { room: '教会聊天室', roomD: '和同一个教会的弟兄姐妹聊天、分享、彼此代祷', open: '进入聊天室', newN: '{0} 则新消息', ph: '说些什么…', send: '送出', nickPh: '你的称呼（大家会看到）', nickNeed: '请先填你的称呼', empty: '还没有人说话，来打声招呼吧！', reply: '回复', copy: '复制', copied: '已复制', del: '删除', armDel: '再按一次删除', deleted: '这则消息已删除', replyTo: '回复 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室还没开通，请负责人联络管理者开通', e_net: '连不上聊天室，请稍后再试', e_slow: '说太快了，等一下再送', e_full: '今天的消息太多了，明天再聊', e_forbid: '只能删除自己的消息', e_empty: '请输入内容', e_nochurch: '找不到这个教会', tip: '请彼此尊重、用爱心说诚实话；个人隐私与代祷细节请斟酌。负责人可以删除不合宜的消息。', leader: '负责人' },
+en: { room: 'Church chat', roomD: 'Chat, share and pray for one another with your church family', open: 'Open chat', newN: '{0} new', ph: 'Say something…', send: 'Send', nickPh: 'Your name (everyone will see it)', nickNeed: 'Please enter your name first', empty: 'No messages yet — say hello!', reply: 'Reply', copy: 'Copy', copied: 'Copied', del: 'Delete', armDel: 'Tap again to delete', deleted: 'This message was deleted', replyTo: 'Replying to {0}', cancel: 'Cancel', me: 'Me', today: 'Today', yest: 'Yesterday', notReady: 'The chat isn’t switched on yet. Please ask your leader to contact the administrator.', e_net: 'Can’t reach the chat. Please try again later.', e_slow: 'Too fast — wait a moment', e_full: 'Too many messages today — let’s continue tomorrow', e_forbid: 'You can only delete your own messages', e_empty: 'Please type a message', e_nochurch: 'This church can’t be found', tip: 'Be kind and speak the truth in love; take care with private matters and prayer details. Leaders can remove inappropriate messages.', leader: 'Leader' },
+ko: { room: '교회 대화방', roomD: '같은 교회 형제자매와 이야기하고 나누며 서로 기도해요', open: '대화방 들어가기', newN: '새 메시지 {0}', ph: '메시지를 입력하세요…', send: '보내기', nickPh: '내 이름 (모두에게 보여요)', nickNeed: '먼저 이름을 입력해 주세요', empty: '아직 메시지가 없어요. 먼저 인사해 보세요!', reply: '답장', copy: '복사', copied: '복사했어요', del: '삭제', armDel: '한 번 더 누르면 삭제돼요', deleted: '삭제된 메시지예요', replyTo: '{0}님에게 답장', cancel: '취소', me: '나', today: '오늘', yest: '어제', notReady: '대화방이 아직 열리지 않았어요. 리더에게 관리자에게 연락해 달라고 해 주세요.', e_net: '대화방에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.', e_slow: '너무 빨라요. 잠시 후 보내 주세요', e_full: '오늘은 메시지가 너무 많아요. 내일 이어서 이야기해요', e_forbid: '내 메시지만 삭제할 수 있어요', e_empty: '내용을 입력해 주세요', e_nochurch: '교회를 찾을 수 없어요', tip: '서로 존중하고 사랑 안에서 참된 것을 말해요. 개인 정보와 기도 제목은 신중하게 나눠 주세요. 리더는 부적절한 메시지를 삭제할 수 있어요.', leader: '리더' }
+};
+function CCs(k, a) { var d = CCT[L()] || CCT.zh, s = d[k]; if (s == null) s = CCT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
+function ccErr(e) { if (e === 'http404' || e === 'nodb' || e === 'notfound') return CCs('notReady'); return CCs('e_' + e) !== 'e_' + e ? CCs('e_' + e) : CCs('e_net'); }
+function ccApi(m, path, body, cb) {
+ajax(m, CCURL + path, body, null, function (st, txt) {
+var j = null; try { j = JSON.parse(txt); } catch (e) { j = null; }
+if (j && j.ok) cb(j, ''); else cb(null, j && j.err ? j.err : (st > 0 ? 'http' + st : 'net'));
+});
+}
+function ccSeen() { return (S.ch && S.ch.chatSeen) || 0; }
+function ccMerge(list) {
+var have = {}, i;
+for (i = 0; i < CC.msgs.length; i++) have[CC.msgs[i].id] = i;
+eachA(list || [], function (m) { if (have[m.id] != null) CC.msgs[have[m.id]] = m; else CC.msgs.push(m); if (m.id > CC.last) CC.last = m.id; });
+CC.msgs.sort(function (a, b) { return a.id - b.id; });
+if (CC.msgs.length > 400) CC.msgs = CC.msgs.slice(-400);
+}
+/* 我的教會頁的聊天室卡片：順便算未讀 */
+function ccCardHtml() {
+return '<div class="card cccard" onclick="open_({t:\'chchat\'})"><div class="row"><div class="ccic">💬</div><div class="grow"><b>' + esc(CCs('room')) + '</b><div class="xs muted">' + esc(CCs('roomD')) + '</div></div>' +
+(CC.unread ? '<span class="chdot">' + esc(CCs('newN', CC.unread)) + '</span>' : '<span class="xs muted">' + esc(CCs('open')) + ' ›</span>') + '</div></div>';
+}
+function ccPeek() {
+if (!S.ch || now() - CC.uAt < 60000) return;
+CC.uAt = now();
+ccApi('GET', '/c/' + S.ch.code + '/msgs?after=' + ccSeen() + '&dev=' + encodeURIComponent(S.ch.dev || ''), null, function (j) {
+if (!j) return; var n = 0;
+eachA(j.msgs, function (m) { if (!m.mine && !m.del && m.id > ccSeen()) n++; });
+CC.unread = n; var el = $('#ccCard'); if (el) el.innerHTML = ccCardHtml();
+});
+}
+function ccCss() {
+if ($('#ccCss')) return;
+var st = document.createElement('style'); st.id = 'ccCss';
+st.textContent = '.cccard{cursor:pointer}.ccic{width:42px;height:42px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:1.3em;flex:none}' +
+'.cclist{padding:4px 0 calc(var(--ccft,120px) + 12px)}.ccday{text-align:center;margin:14px 0 6px}.ccday span{font-size:.72em;color:var(--mute);background:var(--soft);border-radius:999px;padding:3px 10px}' +
+'.ccm{display:flex;gap:8px;margin:8px 0;align-items:flex-end}.ccm.mine{flex-direction:row-reverse}.ccav{width:34px;height:34px;border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;font-size:.9em}' +
+'.ccb{max-width:76%;min-width:0}.ccn{font-size:.74em;color:var(--mute);margin:0 4px 2px}.ccm.mine .ccn{text-align:right}' +
+'.cct{background:var(--card);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px;padding:9px 13px;white-space:pre-wrap;word-break:break-word;line-height:1.65;cursor:pointer}' +
+'.ccm.mine .cct{background:var(--brand);border-color:var(--brand);color:#fff;border-bottom-left-radius:16px;border-bottom-right-radius:5px}.ccm.mine .cct a{color:#fff}' +
+'.cct.gone{background:none;color:var(--mute);font-style:italic;border-style:dashed}.ccq{font-size:.8em;opacity:.8;border-left:3px solid var(--gold);padding:2px 8px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+'.cctime{font-size:.68em;color:var(--mute);margin:0 4px;white-space:nowrap;align-self:flex-end}.ccacts{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}.ccm.mine .ccacts{justify-content:flex-end}' +
+'.ccacts button{border:1px solid var(--line);background:var(--card);border-radius:999px;font-size:.76em;padding:3px 10px;cursor:pointer;color:var(--ink)}' +
+'.ccft{position:fixed;left:0;right:0;bottom:var(--cctb,0px);z-index:35;background:var(--card);border-top:1px solid var(--line);padding:8px 12px}.ccft .in{max-width:720px;margin:0 auto}' +
+'.ccft textarea{min-height:44px;max-height:120px;height:44px;resize:none;padding:10px 12px;line-height:1.5}.ccft .row{align-items:flex-end;gap:8px}.ccft .btn{min-height:44px;flex:none}' +
+'.ccre{display:flex;align-items:center;gap:8px;font-size:.8em;color:var(--brand);margin-bottom:6px}.ccre span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ccre button{border:0;background:none;color:var(--mute);cursor:pointer}' +
+'.cctip{font-size:.74em;color:var(--mute);background:var(--soft);border-radius:12px;padding:8px 12px;margin:8px 0;line-height:1.6}' +
+'#gxaroot{background:transparent!important;padding-bottom:0!important}';
+document.head.appendChild(st);
+}
+var CCCOL = ['#1F3C88', '#5E8A35', '#A8572E', '#6C4BA3', '#2E7D8C', '#B8473E', '#8A6510', '#3A74B0'];
+function ccCol(w) { var n = parseInt(String(w || '0').slice(0, 6), 16) || 0; return CCCOL[n % CCCOL.length]; }
+function ccTime(ts) { var d = new Date(ts); return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes(); }
+function ccDay(ts) {
+var d = new Date(ts), t = new Date(), y = new Date(t.getTime() - 864e5);
+var same = function (a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
+if (same(d, t)) return CCs('today'); if (same(d, y)) return CCs('yest');
+return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+}
+function ccFind(id) { for (var i = 0; i < CC.msgs.length; i++) if (CC.msgs[i].id === id) return CC.msgs[i]; return null; }
+function ccListHtml() {
+if (!CC.msgs.length) return '<div class="empty">' + esc(CC.err ? ccErr(CC.err) : CCs('empty')) + '</div>';
+var h = '', lastDay = '';
+eachA(CC.msgs, function (m) {
+var day = ccDay(m.ts); if (day !== lastDay) { h += '<div class="ccday"><span>' + esc(day) + '</span></div>'; lastDay = day; }
+var q = m.re ? ccFind(m.re) : null, sel = CC.sel === m.id, adm = !!(S.ch && S.ch.pin);
+h += '<div class="ccm' + (m.mine ? ' mine' : '') + '" id="ccm' + m.id + '">' +
+(m.mine ? '' : '<div class="ccav" style="background:' + ccCol(m.who) + '">' + esc(String(m.nick || '?').slice(0, 1)) + '</div>') +
+'<div class="ccb">' + (m.mine ? '' : '<div class="ccn">' + esc(m.nick) + '</div>') +
+(m.del ? '<div class="cct gone">' + esc(CCs('deleted')) + '</div>' :
+'<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>') +
+(sel && !m.del ? '<div class="ccacts"><button onclick="ccReply(' + m.id + ')">↩ ' + esc(CCs('reply')) + '</button><button onclick="ccCopy(' + m.id + ')">' + esc(CCs('copy')) + '</button>' +
+((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(CC.arm === m.id ? CCs('armDel') : CCs('del')) + '</button>' : '') + '</div>' : '') +
+'</div><div class="cctime">' + ccTime(m.ts) + '</div></div>';
+});
+return h;
+}
+function ccPaint(stick) {
+var box = $('#ccList'); if (!box) return;
+var nearEnd = stick || (window.innerHeight + window.scrollY >= document.body.scrollHeight - 160);
+box.innerHTML = ccListHtml();
+if (nearEnd) window.scrollTo(0, document.body.scrollHeight);
+var mx = CC.last; if (S.ch && mx > ccSeen()) { S.ch.chatSeen = mx; CC.unread = 0; save(); }
+}
+function ccFit() {
+var tb = $('#tabbar'), ft = $('#ccFt');
+var h = tb && tb.style.display !== 'none' ? tb.getBoundingClientRect().height : 0;
+document.documentElement.style.setProperty('--cctb', h + 'px');
+if (ft) document.documentElement.style.setProperty('--ccft', (ft.getBoundingClientRect().height + h) + 'px');
+}
+function vChChat() {
+if (!S.ch) return back();
+ccCss();
+var h = topbar(S.ch.name + ' · ' + CCs('room'), true, '<button class="ib" onclick="ccPull(1)" aria-label="refresh">⟳</button>');
+h += '<div class="cctip">' + esc(CCs('tip')) + '</div><div class="cclist" id="ccList"></div>';
+var q = CC.re ? ccFind(CC.re) : null;
+h += '<div class="ccft" id="ccFt"><div class="in">' +
+(trim(S.name) ? '' : '<input type="text" id="ccNick" maxlength="20" placeholder="' + esc(CCs('nickPh')) + '" style="margin-bottom:6px;min-height:40px">') +
+(q ? '<div class="ccre"><span>↩ ' + esc(CCs('replyTo', q.mine ? CCs('me') : q.nick)) + '：' + esc(q.text) + '</span><button onclick="CC.re=0;vChChat()">✕ ' + esc(CCs('cancel')) + '</button></div>' : '') +
+'<div class="row"><textarea id="ccIn" maxlength="600" placeholder="' + esc(CCs('ph')) + '" oninput="ccGrow(this)"></textarea><button class="btn pri" id="ccSend" onclick="ccSend()">' + esc(CCs('send')) + '</button></div></div></div>';
+var draft = $('#ccIn') ? $('#ccIn').value : (CC.draft || '');
+setApp(h);
+var fab = $('#fab'); if (fab) fab.style.display = 'none';
+var ta = $('#ccIn'); if (ta && draft) { ta.value = draft; ccGrow(ta); }
+ccFit(); ccPaint(true);
+ccPull(CC.msgs.length ? 0 : 1);
+clearInterval(CC.timer);
+CC.timer = setInterval(function () {
+if (!(R.page && R.page.t === 'chchat')) { clearInterval(CC.timer); CC.timer = 0; var f = $('#fab'); if (f) f.style.display = ''; return; }
+if (!document.hidden) ccPull(0);
+}, 6000);
+}
+function ccGrow(ta) { CC.draft = ta.value; ta.style.height = '44px'; ta.style.height = Math.min(120, ta.scrollHeight + 2) + 'px'; ccFit(); }
+function ccPull(full) {
+if (!S.ch || CC.busy) return;
+CC.busy = 1;
+var after = full ? 0 : CC.last;
+ccApi('GET', '/c/' + S.ch.code + '/msgs?after=' + after + '&dev=' + encodeURIComponent(S.ch.dev || ''), null, function (j, e) {
+CC.busy = 0;
+if (!j) { CC.err = e; if (!CC.msgs.length || full) ccPaint(); if (full) toast(ccErr(e)); return; }
+CC.err = '';
+if (full) { CC.msgs = []; CC.last = 0; }
+var before = CC.last; ccMerge(j.msgs);
+if (full || CC.last !== before) ccPaint(full);
+});
+}
+function ccTap(id) { CC.sel = CC.sel === id ? 0 : id; CC.arm = 0; ccPaint(); }
+function ccReply(id) { CC.re = id; CC.sel = 0; vChChat(); var ta = $('#ccIn'); if (ta) ta.focus(); }
+function ccCopy(id) {
+var m = ccFind(id); if (!m) return;
+try { navigator.clipboard.writeText(m.text).then(function () { toast(CCs('copied')); }, function () { toast(m.text); }); } catch (e) { toast(m.text); }
+CC.sel = 0; ccPaint();
+}
+function ccDel(id) {
+if (CC.arm !== id) { CC.arm = id; ccPaint(); return; }
+CC.arm = 0;
+ccApi('POST', '/c/' + S.ch.code + '/del', { id: id, dev: S.ch.dev, pin: S.ch.pin || '' }, function (j, e) {
+if (!j) return toast(ccErr(e));
+var m = ccFind(id); if (m) { m.del = 1; m.text = ''; }
+CC.sel = 0; ccPaint(); toast(CT('deleted'));
+});
+}
+function ccSend() {
+var ta = $('#ccIn'), nk = $('#ccNick');
+if (nk) { var n = trim(nk.value || ''); if (!n) { toast(CCs('nickNeed')); nk.focus(); return; } S.name = n.slice(0, 20); save(); }
+var text = trim(ta ? ta.value : ''); if (!text) return toast(CCs('e_empty'));
+if (CC.sending) return; CC.sending = 1;
+var btn = $('#ccSend'); if (btn) btn.disabled = true;
+ccApi('POST', '/c/' + S.ch.code + '/send', { dev: S.ch.dev, nick: trim(S.name), text: text, re: CC.re || 0, after: CC.last }, function (j, e) {
+CC.sending = 0; var b = $('#ccSend'); if (b) b.disabled = false;
+if (!j) return toast(ccErr(e));
+CC.draft = ''; var hadRe = CC.re; CC.re = 0; if (ta) ta.value = '';
+if (nk || hadRe) { ccMerge(j.msgs); vChChat(); return; }
+var t2 = $('#ccIn'); if (t2) { t2.value = ''; ccGrow(t2); t2.focus(); }
+ccMerge(j.msgs); ccPaint(true);
+});
+}
+try { ccCss(); } catch (e) { }
