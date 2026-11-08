@@ -215,6 +215,8 @@ h += '<div class="grid2"><div class="tile c"><div class="h2" style="color:var(--
 (d.plan ? '<div class="tile c" style="cursor:pointer" onclick="open_({t:\'lesson\',w:' + d.plan.w + ',d:' + (d.plan.d || 1) + '})"><span class="xs muted">' + esc(CT('planT')) + '</span><b style="color:var(--brand)">' + esc(T('wkN', d.plan.w) + (d.plan.d ? ' · ' + T('dN', d.plan.d) : '')) + '</b><span class="xs muted">' + esc(T('wt' + d.plan.w)) + '</span></div>' : '<div class="tile c"><span class="xs muted">' + esc(CT('planT')) + '</span><span class="sm muted">' + esc(CT('noPlan')) + '</span></div>') + '</div>';
 if (d.plan && d.plan.note) h += '<p class="sm chnote">「' + esc(d.plan.note) + '」</p>';
 if (window.ccCardHtml) { ccCss(); h += '<div id="ccCard">' + ccCardHtml() + '</div>'; }
+if (window.crgAskHtml) h += crgAskHtml();
+if (adm && window.vChCare) h += '<div class="card cccard" onclick="CR2.list=null;CR2.err=\'\';open_({t:\'chcare\'})"><div class="row"><div class="ccic">🤝</div><div class="grow"><b>' + esc(CRs('care')) + '</b><div class="xs muted">' + esc(CRs('careD')) + '</div></div><span class="xs muted">›</span></div></div>';
 if (adm) h += '<div class="row chadm"><button class="btn pri grow" onclick="chEdit(\'\')">＋ ' + esc(CT('post')) + '</button><button class="btn" onclick="chPlanEd()">' + esc(CT('setPlan')) + '</button><button class="btn" onclick="chMore()">⋯</button></div>';
 var cs = '<button class="chip' + (!CH.f ? ' on' : '') + '" onclick="CH.f=\'\';vChurch()">' + esc(CT('all')) + '</button>';
 eachA(CHK, function (k) { cs += '<button class="chip' + (CH.f === k ? ' on' : '') + '" onclick="CH.f=\'' + k + '\';vChurch()">' + esc(chKind(k)) + '</button>'; });
@@ -230,10 +232,12 @@ h += '<div class="card chn' + (n.ts > seen ? ' new' : '') + '"><div class="row s
 (adm ? '<button class="btn" onclick="chEdit(\'' + n.id + '\')">' + esc(CT('edit')) + '</button><button class="btn" id="chd' + n.id + '" onclick="chDel(\'' + n.id + '\')">' + esc(CT('armDel') && CH.armDel === n.id ? CT('armDel') : CT('del')) + '</button>' : '') + '</div></div>';
 });
 h += '<div class="row" style="margin:18px 0 6px">' + (adm ? '' : '<button class="btn grow" onclick="chLogin()">' + esc(CT('leaderLogin')) + '</button>') + '<button class="btn grow" onclick="chLeave()">' + esc(CH.armLeave ? CT('armLeave') : CT('leave')) + '</button></div>';
+if (window.crgLineHtml) h += crgLineHtml();
 h += '<p class="xs muted c">' + esc(CT('privacy')) + '</p>';
 setApp(h);
 var mx = chMaxTs(d); if (mx > (S.ch.seen || 0)) { S.ch.seen = mx; save(); }
 if (window.ccPeek) ccPeek();
+if (window.crgSend) crgSend(false);
 if (now() - CH.at > 60000) chFetch(true, function (j) { CH.off = !j; if (j && R.page && R.page.t === 'church') vChurch(); });
 }
 function chRefresh() { CH.at = 0; chFetch(true, function (j, e) { CH.off = !j; if (!j) toast(chErr(e)); if (R.page && R.page.t === 'church') vChurch(); }); }
@@ -351,7 +355,7 @@ var p = $('#cmp').value || '', p2 = $('#cmp2').value || ''; if (p.length < 4) re
 chAdm('/pin', { newpin: p }, function () { S.ch.pin = p; save(); closeSheet(); toast(CT('pinChanged')); });
 }
 function chDone() {
-if (!S.ch) return; var d = today(); if (S.ch.day === d) return;
+if (!S.ch) return; if (window.crgSend) crgSend(true); var d = today(); if (S.ch.day === d) return;
 if (!S.ch.dev) S.ch.dev = uid();
 chApi('POST', '/c/' + S.ch.code + '/done', { day: d, dev: S.ch.dev }, function (j) { if (!j) return; S.ch.day = d; if (S.chData) S.chData.today = j.today; save(); });
 }
@@ -385,7 +389,7 @@ en: { room: 'Church chat', roomD: 'Chat, share and pray for one another with you
 ko: { room: '교회 대화방', roomD: '같은 교회 형제자매와 이야기하고 나누며 서로 기도해요', open: '대화방 들어가기', newN: '새 메시지 {0}', ph: '메시지를 입력하세요…', send: '보내기', nickPh: '내 이름 (모두에게 보여요)', nickNeed: '먼저 이름을 입력해 주세요', empty: '아직 메시지가 없어요. 먼저 인사해 보세요!', reply: '답장', copy: '복사', copied: '복사했어요', del: '삭제', armDel: '한 번 더 누르면 삭제돼요', deleted: '삭제된 메시지예요', replyTo: '{0}님에게 답장', cancel: '취소', me: '나', today: '오늘', yest: '어제', notReady: '대화방이 아직 열리지 않았어요. 리더에게 관리자에게 연락해 달라고 해 주세요.', e_net: '대화방에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.', e_slow: '너무 빨라요. 잠시 후 보내 주세요', e_full: '오늘은 메시지가 너무 많아요. 내일 이어서 이야기해요', e_forbid: '내 메시지만 삭제할 수 있어요', e_empty: '내용을 입력해 주세요', e_nochurch: '교회를 찾을 수 없어요', tip: '서로 존중하고 사랑 안에서 참된 것을 말해요. 개인 정보와 기도 제목은 신중하게 나눠 주세요. 리더는 부적절한 메시지를 삭제할 수 있어요.', leader: '리더' }
 };
 function CCs(k, a) { var d = CCT[L()] || CCT.zh, s = d[k]; if (s == null) s = CCT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
-function ccErr(e) { if (e === 'http404' || e === 'nodb' || e === 'notfound') return CCs('notReady'); return CCs('e_' + e) !== 'e_' + e ? CCs('e_' + e) : CCs('e_net'); }
+function ccErr(e) { if (e === 'badpin') return CT('e_badpin'); if (e === 'http404' || e === 'nodb' || e === 'notfound') return CCs('notReady'); return CCs('e_' + e) !== 'e_' + e ? CCs('e_' + e) : CCs('e_net'); }
 function ccApi(m, path, body, cb) {
 ajax(m, CCURL + path, body, null, function (st, txt) {
 var j = null; try { j = JSON.parse(txt); } catch (e) { j = null; }
@@ -541,3 +545,100 @@ ccMerge(j.msgs); ccPaint(true);
 });
 }
 try { ccCss(); } catch (e) { }
+
+/* ── 關懷名單（v1，2026-11-09）：弟兄姊妹同意後分享靈修進度，負責人看得到誰完成、誰需要關懷 ──
+   後端同 church-chat Worker（/prog、/roster）。不同意就不送任何名字；關掉分享，伺服器整筆刪除。 */
+var CR2 = { list: null, err: '', f: 'all', at: 0, busy: 0 };
+var CRT = {
+zh: { askT: '讓負責人知道你的靈修進度？', askD: '負責人可以看到你的稱呼、最近一次完成靈修的日期、完成堂數和本週進度，方便為你禱告、關心你。不會送出筆記、畫線或禱告內容，隨時可以關閉。', yes: '好，分享給負責人', no: '先不要', shareOn: '已分享靈修進度給負責人', shareOff: '沒有分享靈修進度給負責人', turnOn: '開啟分享', turnOff: '關閉分享', offDone: '已關閉分享，伺服器上的進度已刪除', onDone: '已分享，謝謝你讓大家彼此看顧', care: '關懷名單', careD: '同意分享進度的弟兄姊妹', f_all: '全部', f_need: '需要關懷', f_week: '本週完成', today: '今天完成', daysAgo: '{0} 天前完成', never: '還沒有完成紀錄', total: '共 {0} 堂', d7: '近 7 天 {0} 天', week: '本週 {0}', weekDone: '本週已完成', weekNot: '本週還沒讀', careBtn: '關懷', careTxt: '{0}平安！這幾天想起你，為你禱告。最近好嗎？有什麼需要代禱的，隨時跟我說。願主親自陪伴你，我們一起繼續讀下去。', copied: '已複製關懷話語，可以貼到 LINE 私訊', shared: '{0} 位分享進度', none: '還沒有人分享進度。可以在聚會或聊天室邀請大家到「我的教會」按「好，分享給負責人」。', note: '只顯示同意分享的人；沒出現在名單上的人，可能只是沒有開啟分享。關懷時請私下聯絡，不要在聊天室點名。', needLogin: '請先用負責人身分登入', upd: '更新於 {0}' },
+zs: { askT: '让负责人知道你的灵修进度？', askD: '负责人可以看到你的称呼、最近一次完成灵修的日期、完成堂数和本周进度，方便为你祷告、关心你。不会送出笔记、画线或祷告内容，随时可以关闭。', yes: '好，分享给负责人', no: '先不要', shareOn: '已分享灵修进度给负责人', shareOff: '没有分享灵修进度给负责人', turnOn: '开启分享', turnOff: '关闭分享', offDone: '已关闭分享，服务器上的进度已删除', onDone: '已分享，谢谢你让大家彼此看顾', care: '关怀名单', careD: '同意分享进度的弟兄姐妹', f_all: '全部', f_need: '需要关怀', f_week: '本周完成', today: '今天完成', daysAgo: '{0} 天前完成', never: '还没有完成纪录', total: '共 {0} 堂', d7: '近 7 天 {0} 天', week: '本周 {0}', weekDone: '本周已完成', weekNot: '本周还没读', careBtn: '关怀', careTxt: '{0}平安！这几天想起你，为你祷告。最近好吗？有什么需要代祷的，随时跟我说。愿主亲自陪伴你，我们一起继续读下去。', copied: '已复制关怀话语，可以贴到微信或 LINE 私讯', shared: '{0} 位分享进度', none: '还没有人分享进度。可以在聚会或聊天室邀请大家到「我的教会」按「好，分享给负责人」。', note: '只显示同意分享的人；没出现在名单上的人，可能只是没有开启分享。关怀时请私下联络，不要在聊天室点名。', needLogin: '请先用负责人身分登入', upd: '更新于 {0}' },
+en: { askT: 'Let your leader see your devotion progress?', askD: 'Your leader will see your name, the date you last finished a devotion, how many lessons you’ve done and this week’s progress — so they can pray for you and check in. Your notes, highlights and prayers are never sent. You can turn this off anytime.', yes: 'Yes, share with my leader', no: 'Not now', shareOn: 'Sharing your progress with your leader', shareOff: 'Not sharing your progress with your leader', turnOn: 'Turn on', turnOff: 'Turn off', offDone: 'Sharing turned off — your progress was deleted from the server', onDone: 'Shared — thank you for letting us care for one another', care: 'Care list', careD: 'Members who chose to share their progress', f_all: 'All', f_need: 'Need care', f_week: 'Done this week', today: 'Finished today', daysAgo: 'Finished {0} days ago', never: 'No devotion finished yet', total: '{0} lessons', d7: '{0} of last 7 days', week: 'This week {0}', weekDone: 'This week done', weekNot: 'This week not yet', careBtn: 'Reach out', careTxt: 'Hi {0}, peace to you! I’ve been thinking of you and praying for you. How are you doing? If there’s anything I can pray about, just tell me. May the Lord be close to you — let’s keep reading together.', copied: 'Message copied — paste it into a private chat', shared: '{0} sharing progress', none: 'No one is sharing progress yet. Invite everyone to tap “Yes, share with my leader” under My Church.', note: 'Only members who chose to share appear here; someone missing may simply not have turned sharing on. Please reach out privately — don’t name people in the group chat.', needLogin: 'Please sign in as leader first', upd: 'Updated {0}' },
+ko: { askT: '리더에게 묵상 진도를 알려 줄까요?', askD: '리더가 내 이름, 마지막으로 묵상을 마친 날짜, 마친 과 수, 이번 주 진도를 볼 수 있어서 나를 위해 기도하고 돌볼 수 있어요. 메모, 밑줄, 기도 내용은 보내지 않아요. 언제든 끌 수 있어요.', yes: '네, 리더에게 공유할게요', no: '나중에', shareOn: '리더에게 묵상 진도를 공유하고 있어요', shareOff: '리더에게 묵상 진도를 공유하지 않아요', turnOn: '공유 켜기', turnOff: '공유 끄기', offDone: '공유를 껐어요. 서버의 진도 기록을 삭제했어요', onDone: '공유했어요. 서로 돌보게 해 주셔서 고마워요', care: '돌봄 명단', careD: '진도 공유에 동의한 형제자매', f_all: '전체', f_need: '돌봄 필요', f_week: '이번 주 완료', today: '오늘 완료', daysAgo: '{0}일 전 완료', never: '아직 완료 기록이 없어요', total: '총 {0}과', d7: '최근 7일 중 {0}일', week: '이번 주 {0}', weekDone: '이번 주 완료', weekNot: '이번 주 아직', careBtn: '돌보기', careTxt: '{0}님, 평안하세요! 요즘 생각나서 기도하고 있어요. 잘 지내세요? 기도 제목이 있으면 언제든 말해 주세요. 주님이 함께하시길 바라요. 우리 계속 같이 읽어요.', copied: '돌봄 메시지를 복사했어요. 개인 메시지에 붙여 넣으세요', shared: '{0}명 공유 중', none: '아직 진도를 공유한 사람이 없어요. 모임이나 대화방에서 “나의 교회”에서 공유를 눌러 달라고 초대해 보세요.', note: '공유에 동의한 사람만 보여요. 명단에 없는 사람은 공유를 켜지 않았을 수도 있어요. 돌볼 때는 개인적으로 연락하고, 대화방에서 이름을 부르지 마세요.', needLogin: '먼저 리더로 로그인해 주세요', upd: '{0} 업데이트' }
+};
+function CRs(k, a) { var d = CRT[L()] || CRT.zh, s = d[k]; if (s == null) s = CRT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
+function crgProg() {
+var last = 0, days = {}, t7 = now() - 7 * 864e5;
+each(S.done, function (k, v) { var ts = +v || 0; if (ts > last) last = ts; if (ts > t7) days[new Date(ts).toDateString()] = 1; });
+var d7 = 0; each(days, function () { d7++; });
+var p = (S.chData && S.chData.plan) || null, pn = 0;
+if (p) pn = p.d ? (S.done[lid(p.w, p.d)] ? 1 : 0) : weekDone(p.w);
+return { total: totalDone(), last: last, d7: d7, pw: p ? p.w : 0, pd: p ? (p.d || 0) : 0, pn: pn };
+}
+function crgSend(force, cb) {
+if (!S.ch || S.ch.share !== 1) return cb && cb();
+if (!force && S.ch.shAt && now() - S.ch.shAt < 6 * 3600e3) return cb && cb();
+if (!S.ch.dev) S.ch.dev = uid();
+var g = crgProg(); g.dev = S.ch.dev; g.nick = trim(S.name); g.share = 1;
+ccApi('POST', '/c/' + S.ch.code + '/prog', g, function (j, e) { if (j) { S.ch.shAt = now(); save(); } if (cb) cb(j, e); });
+}
+function crgSet(on) {
+var nk = $('#crgNick');
+if (on && nk) { var n = trim(nk.value || ''); if (!n) { toast(CCs('nickNeed')); nk.focus(); return; } S.name = n.slice(0, 20); }
+if (on) {
+S.ch.share = 1; S.ch.shAt = 0; save();
+crgSend(true, function (j, e) { if (j) toast(CRs('onDone')); else { toast(ccErr(e)); } if (R.page && R.page.t === 'church') vChurch(); });
+} else if (S.ch.share === 1) {
+S.ch.share = 0; save();
+ccApi('POST', '/c/' + S.ch.code + '/prog', { dev: S.ch.dev, share: 0 }, function (j, e) { toast(j ? CRs('offDone') : ccErr(e)); });
+if (R.page && R.page.t === 'church') vChurch();
+} else { S.ch.share = 0; save(); if (R.page && R.page.t === 'church') vChurch(); }
+}
+function crgAskHtml() {
+if (!S.ch || S.ch.share === 1 || S.ch.share === 0) return '';
+return '<div class="card crgask"><b>🤝 ' + esc(CRs('askT')) + '</b><p class="sm muted" style="margin:6px 0 10px">' + esc(CRs('askD')) + '</p>' +
+(trim(S.name) ? '' : '<input type="text" id="crgNick" maxlength="20" placeholder="' + esc(CCs('nickPh')) + '" style="margin-bottom:8px">') +
+'<div class="row"><button class="btn pri grow" onclick="crgSet(1)">' + esc(CRs('yes')) + '</button><button class="btn" onclick="crgSet(0)">' + esc(CRs('no')) + '</button></div></div>';
+}
+function crgLineHtml() {
+if (!S.ch || (S.ch.share !== 1 && S.ch.share !== 0)) return '';
+var on = S.ch.share === 1;
+return '<div class="row crgline"><span class="xs muted grow">' + (on ? '🤝 ' : '') + esc(on ? CRs('shareOn') : CRs('shareOff')) + '</span><button class="btn sm" onclick="crgSet(' + (on ? 0 : 1) + ')">' + esc(on ? CRs('turnOff') : CRs('turnOn')) + '</button></div>';
+}
+function crgDays(ts) { if (!ts) return -1; var a = new Date(ts), b = new Date(); a.setHours(0, 0, 0, 0); b.setHours(0, 0, 0, 0); return Math.round((b - a) / 864e5); }
+function crgLevel(m) { var d = crgDays(m.last); if (d < 0) return 3; if (d === 0) return 0; if (d <= 2) return 1; if (d <= 6) return 2; return 3; }
+function vChCare() {
+if (!S.ch) return back();
+ccCss();
+var h = topbar(CRs('care'), true, '<button class="ib" onclick="crgLoad(1)" aria-label="refresh">⟳</button>');
+if (!S.ch.pin) { setApp(h + '<div class="empty">' + esc(CRs('needLogin')) + '</div>'); return; }
+var p = (S.chData && S.chData.plan) || null;
+if (!CR2.list) { setApp(h + '<div class="empty">' + esc(CR2.err ? ccErr(CR2.err) : T('loading')) + '</div>'); if (!CR2.err) crgLoad(0); return; }
+var L2 = CR2.list, need = 0, wk = 0;
+var weekOk = function (m) { return p && m.pw === p.w && (p.d ? m.pd === p.d && m.pn >= 1 : m.pn >= 5); };
+eachA(L2, function (m) { if (crgLevel(m) >= 2) need++; if (weekOk(m)) wk++; });
+h += '<p class="sm muted" style="margin:4px 2px 8px">' + esc(CRs('shared', L2.length)) + (p ? ' · ' + esc(CT('planT')) + '：' + esc(chPlanTxt(p)) : '') + '</p>';
+h += '<div class="chips"><button class="chip' + (CR2.f === 'all' ? ' on' : '') + '" onclick="CR2.f=\'all\';vChCare()">' + esc(CRs('f_all')) + ' ' + L2.length + '</button>' +
+'<button class="chip' + (CR2.f === 'need' ? ' on' : '') + '" onclick="CR2.f=\'need\';vChCare()">' + esc(CRs('f_need')) + ' ' + need + '</button>' +
+(p ? '<button class="chip' + (CR2.f === 'week' ? ' on' : '') + '" onclick="CR2.f=\'week\';vChCare()">' + esc(CRs('f_week')) + ' ' + wk + '</button>' : '') + '</div>';
+var rows = [];
+eachA(L2, function (m) { if (CR2.f === 'need' && crgLevel(m) < 2) return; if (CR2.f === 'week' && !weekOk(m)) return; rows.push(m); });
+rows.sort(function (a, b) { return (a.last || 0) - (b.last || 0); });
+if (!L2.length) h += '<div class="empty">' + esc(CRs('none')) + '</div>';
+var COL = ['var(--ok)', '#3A74B0', 'var(--warn)', 'var(--bad)'], ICN = ['✅', '🟢', '🟠', '🔴'];
+eachA(rows, function (m, i) {
+var lv = crgLevel(m), d = crgDays(m.last);
+var when = d < 0 ? CRs('never') : (d === 0 ? CRs('today') : CRs('daysAgo', d));
+var wtxt = p && m.pw === p.w ? (p.d ? (m.pn ? CRs('weekDone') : CRs('weekNot')) : CRs('week', m.pn + '/5')) : '';
+h += '<div class="card crgrow" style="border-left:5px solid ' + COL[lv] + ';padding:12px 14px"><div class="row"><div class="ccav" style="background:' + ccCol(m.who) + '">' + esc(String(m.nick || '?').slice(0, 1)) + '</div>' +
+'<div class="grow" style="min-width:0"><b>' + esc(m.nick) + '</b><div class="xs" style="color:' + COL[lv] + ';font-weight:700">' + ICN[lv] + ' ' + esc(when) + '</div>' +
+'<div class="xs muted">' + esc(CRs('total', m.total || 0)) + ' · ' + esc(CRs('d7', m.d7 || 0)) + (wtxt ? ' · ' + esc(wtxt) : '') + '</div></div>' +
+'<button class="btn sm" onclick="crgCare(' + i + ')">💌 ' + esc(CRs('careBtn')) + '</button></div></div>';
+});
+CR2.rows = rows;
+h += '<p class="xs muted" style="margin:14px 4px">' + esc(CRs('note')) + '</p>';
+setApp(h);
+}
+function crgLoad(force) {
+if (CR2.busy || !S.ch || !S.ch.pin) return; CR2.busy = 1;
+ccApi('POST', '/c/' + S.ch.code + '/roster', { pin: S.ch.pin, dev: S.ch.dev || uid() }, function (j, e) {
+CR2.busy = 0; CR2.err = j ? '' : e; if (j) { CR2.list = j.list; CR2.at = now(); }
+if (!j && force) toast(ccErr(e));
+if (R.page && R.page.t === 'chcare') vChCare();
+});
+}
+function crgCare(i) {
+var m = (CR2.rows || [])[i]; if (!m) return;
+var txt = CRs('careTxt', m.nick);
+if (navigator.share) { navigator.share({ text: txt }).catch(function () { }); return; }
+try { navigator.clipboard.writeText(txt).then(function () { toast(CRs('copied')); }, function () { toast(txt); }); } catch (e) { toast(txt); }
+}

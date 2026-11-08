@@ -13,6 +13,10 @@
           Variable name 填 DB，Database 選 church-chat → Save / Deploy
      5. 用瀏覽器打開 https://church-chat.spch321.workers.dev/ 看到
           {"ok":true,"service":"church-chat"} 就完成了（資料表會自動建立）
+
+   v2（2026-11-09）：關懷名單——弟兄姊妹自己同意後，把「稱呼、最近完成靈修的日期、
+        完成堂數、本週進度」送上來；只有負責人（密碼經 church-news 驗證）看得到名單。
+        關掉分享就整筆刪除。不收筆記、畫線、禱告內容。
    ===================================================================== */
 
 const NEWS = 'https://church-news.spch321.workers.dev';
@@ -38,7 +42,10 @@ async function init(db) {
       code TEXT NOT NULL, ts INTEGER NOT NULL, dev TEXT NOT NULL,
       nick TEXT NOT NULL, text TEXT NOT NULL, re INTEGER, del INTEGER DEFAULT 0)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS msg_code_id ON msg(code, id)`),
-    db.prepare(`CREATE TABLE IF NOT EXISTS church (code TEXT PRIMARY KEY, name TEXT, until INTEGER)`)
+    db.prepare(`CREATE TABLE IF NOT EXISTS church (code TEXT PRIMARY KEY, name TEXT, until INTEGER)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS member (
+      code TEXT NOT NULL, dev TEXT NOT NULL, nick TEXT, total INTEGER, last INTEGER, d7 INTEGER,
+      pw INTEGER, pd INTEGER, pn INTEGER, upd INTEGER, PRIMARY KEY (code, dev))`)
   ]);
   ready = true;
 }
@@ -128,6 +135,24 @@ export default {
       if (m.dev !== dev && !(await leaderOk(code, b.pin))) return bad('forbid', 403);
       await db.prepare('UPDATE msg SET del=1, text=\'\' WHERE id=?').bind(id).run();
       return J({ ok: true });
+    }
+    if (act === 'prog') {
+      if (!b.share) {
+        await db.prepare('DELETE FROM member WHERE code=? AND dev=?').bind(code, dev).run();
+        return J({ ok: true, shared: 0 });
+      }
+      if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
+      const n = v => Math.max(0, Math.min(1e13, parseInt(v, 10) || 0));
+      await db.prepare('INSERT OR REPLACE INTO member(code,dev,nick,total,last,d7,pw,pd,pn,upd) VALUES(?,?,?,?,?,?,?,?,?,?)')
+        .bind(code, dev, clean(b.nick, 20) || '弟兄姊妹', n(b.total), n(b.last), n(b.d7), n(b.pw), n(b.pd), n(b.pn), Date.now()).run();
+      return J({ ok: true, shared: 1 });
+    }
+    if (act === 'roster') {
+      if (!(await leaderOk(code, b.pin))) return bad('badpin', 403);
+      const rs = await db.prepare('SELECT dev,nick,total,last,d7,pw,pd,pn,upd FROM member WHERE code=? ORDER BY last').bind(code).all();
+      const list = [];
+      for (const m of rs.results || []) list.push({ who: await tag(m.dev), nick: m.nick, total: m.total, last: m.last, d7: m.d7, pw: m.pw, pd: m.pd, pn: m.pn, upd: m.upd });
+      return J({ ok: true, list, now: Date.now() });
     }
     return bad('notfound', 404);
   }
