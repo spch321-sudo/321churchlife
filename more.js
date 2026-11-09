@@ -390,10 +390,10 @@ document.addEventListener('visibilitychange', function () { if (!document.hidden
 var CCURL = 'https://church-chat.spch321.workers.dev';
 var CC = { msgs: [], last: 0, timer: 0, busy: 0, re: 0, err: '', unread: 0, uAt: 0, arm: 0, sel: 0 };
 var CCT = {
-zh: { room: '教會聊天室', roomD: '和同一個教會的弟兄姊妹聊天、分享、彼此代禱', open: '進入聊天室', newN: '{0} 則新訊息', ph: '說些什麼…', send: '送出', nickPh: '你的稱呼（大家會看到）', nickNeed: '請先填你的稱呼', empty: '還沒有人說話，來打聲招呼吧！', reply: '回覆', copy: '複製', copied: '已複製', del: '刪除', armDel: '再按一次刪除', deleted: '這則訊息已刪除', replyTo: '回覆 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室還沒開通，請負責人聯絡管理者開通', e_net: '連不上聊天室，請稍後再試', e_slow: '說太快了，等一下再送', e_full: '今天的訊息太多了，明天再聊', e_forbid: '只能刪除自己的訊息', e_empty: '請輸入內容', e_nochurch: '找不到這個教會', tip: '請彼此尊重、用愛心說誠實話；個人隱私與代禱細節請斟酌。負責人可以刪除不合宜的訊息。', leader: '負責人' },
-zs: { room: '教会聊天室', roomD: '和同一个教会的弟兄姐妹聊天、分享、彼此代祷', open: '进入聊天室', newN: '{0} 则新消息', ph: '说些什么…', send: '送出', nickPh: '你的称呼（大家会看到）', nickNeed: '请先填你的称呼', empty: '还没有人说话，来打声招呼吧！', reply: '回复', copy: '复制', copied: '已复制', del: '删除', armDel: '再按一次删除', deleted: '这则消息已删除', replyTo: '回复 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室还没开通，请负责人联络管理者开通', e_net: '连不上聊天室，请稍后再试', e_slow: '说太快了，等一下再送', e_full: '今天的消息太多了，明天再聊', e_forbid: '只能删除自己的消息', e_empty: '请输入内容', e_nochurch: '找不到这个教会', tip: '请彼此尊重、用爱心说诚实话；个人隐私与代祷细节请斟酌。负责人可以删除不合宜的消息。', leader: '负责人' },
-en: { room: 'Church chat', roomD: 'Chat, share and pray for one another with your church family', open: 'Open chat', newN: '{0} new', ph: 'Say something…', send: 'Send', nickPh: 'Your name (everyone will see it)', nickNeed: 'Please enter your name first', empty: 'No messages yet — say hello!', reply: 'Reply', copy: 'Copy', copied: 'Copied', del: 'Delete', armDel: 'Tap again to delete', deleted: 'This message was deleted', replyTo: 'Replying to {0}', cancel: 'Cancel', me: 'Me', today: 'Today', yest: 'Yesterday', notReady: 'The chat isn’t switched on yet. Please ask your leader to contact the administrator.', e_net: 'Can’t reach the chat. Please try again later.', e_slow: 'Too fast — wait a moment', e_full: 'Too many messages today — let’s continue tomorrow', e_forbid: 'You can only delete your own messages', e_empty: 'Please type a message', e_nochurch: 'This church can’t be found', tip: 'Be kind and speak the truth in love; take care with private matters and prayer details. Leaders can remove inappropriate messages.', leader: 'Leader' },
-ko: { room: '교회 대화방', roomD: '같은 교회 형제자매와 이야기하고 나누며 서로 기도해요', open: '대화방 들어가기', newN: '새 메시지 {0}', ph: '메시지를 입력하세요…', send: '보내기', nickPh: '내 이름 (모두에게 보여요)', nickNeed: '먼저 이름을 입력해 주세요', empty: '아직 메시지가 없어요. 먼저 인사해 보세요!', reply: '답장', copy: '복사', copied: '복사했어요', del: '삭제', armDel: '한 번 더 누르면 삭제돼요', deleted: '삭제된 메시지예요', replyTo: '{0}님에게 답장', cancel: '취소', me: '나', today: '오늘', yest: '어제', notReady: '대화방이 아직 열리지 않았어요. 리더에게 관리자에게 연락해 달라고 해 주세요.', e_net: '대화방에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.', e_slow: '너무 빨라요. 잠시 후 보내 주세요', e_full: '오늘은 메시지가 너무 많아요. 내일 이어서 이야기해요', e_forbid: '내 메시지만 삭제할 수 있어요', e_empty: '내용을 입력해 주세요', e_nochurch: '교회를 찾을 수 없어요', tip: '서로 존중하고 사랑 안에서 참된 것을 말해요. 개인 정보와 기도 제목은 신중하게 나눠 주세요. 리더는 부적절한 메시지를 삭제할 수 있어요.', leader: '리더' }
+zh: { room: '教會聊天室', roomD: '和同一個教會的弟兄姊妹聊天、分享、彼此代禱', open: '進入聊天室', newN: '{0} 則新訊息', ph: '說些什麼…', send: '送出', nickPh: '你的稱呼（大家會看到）', nickNeed: '請先填你的稱呼', empty: '還沒有人說話，來打聲招呼吧！', reply: '回覆', copy: '複製', copied: '已複製', del: '刪除', armDel: '再按一次刪除', deleted: '這則訊息已收回', replyTo: '回覆 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室還沒開通，請負責人聯絡管理者開通', e_net: '連不上聊天室，請稍後再試', e_slow: '說太快了，等一下再送', e_full: '今天的訊息太多了，明天再聊', e_forbid: '只能刪除自己的訊息', e_empty: '請輸入內容', e_nochurch: '找不到這個教會', tip: '請彼此尊重、用愛心說誠實話；個人隱私與代禱細節請斟酌。負責人可以刪除不合宜的訊息。', leader: '負責人' },
+zs: { room: '教会聊天室', roomD: '和同一个教会的弟兄姐妹聊天、分享、彼此代祷', open: '进入聊天室', newN: '{0} 则新消息', ph: '说些什么…', send: '送出', nickPh: '你的称呼（大家会看到）', nickNeed: '请先填你的称呼', empty: '还没有人说话，来打声招呼吧！', reply: '回复', copy: '复制', copied: '已复制', del: '删除', armDel: '再按一次删除', deleted: '这则消息已收回', replyTo: '回复 {0}', cancel: '取消', me: '我', today: '今天', yest: '昨天', notReady: '聊天室还没开通，请负责人联络管理者开通', e_net: '连不上聊天室，请稍后再试', e_slow: '说太快了，等一下再送', e_full: '今天的消息太多了，明天再聊', e_forbid: '只能删除自己的消息', e_empty: '请输入内容', e_nochurch: '找不到这个教会', tip: '请彼此尊重、用爱心说诚实话；个人隐私与代祷细节请斟酌。负责人可以删除不合宜的消息。', leader: '负责人' },
+en: { room: 'Church chat', roomD: 'Chat, share and pray for one another with your church family', open: 'Open chat', newN: '{0} new', ph: 'Say something…', send: 'Send', nickPh: 'Your name (everyone will see it)', nickNeed: 'Please enter your name first', empty: 'No messages yet — say hello!', reply: 'Reply', copy: 'Copy', copied: 'Copied', del: 'Delete', armDel: 'Tap again to delete', deleted: 'This message was unsent', replyTo: 'Replying to {0}', cancel: 'Cancel', me: 'Me', today: 'Today', yest: 'Yesterday', notReady: 'The chat isn’t switched on yet. Please ask your leader to contact the administrator.', e_net: 'Can’t reach the chat. Please try again later.', e_slow: 'Too fast — wait a moment', e_full: 'Too many messages today — let’s continue tomorrow', e_forbid: 'You can only delete your own messages', e_empty: 'Please type a message', e_nochurch: 'This church can’t be found', tip: 'Be kind and speak the truth in love; take care with private matters and prayer details. Leaders can remove inappropriate messages.', leader: 'Leader' },
+ko: { room: '교회 대화방', roomD: '같은 교회 형제자매와 이야기하고 나누며 서로 기도해요', open: '대화방 들어가기', newN: '새 메시지 {0}', ph: '메시지를 입력하세요…', send: '보내기', nickPh: '내 이름 (모두에게 보여요)', nickNeed: '먼저 이름을 입력해 주세요', empty: '아직 메시지가 없어요. 먼저 인사해 보세요!', reply: '답장', copy: '복사', copied: '복사했어요', del: '삭제', armDel: '한 번 더 누르면 삭제돼요', deleted: '취소된 메시지예요', replyTo: '{0}님에게 답장', cancel: '취소', me: '나', today: '오늘', yest: '어제', notReady: '대화방이 아직 열리지 않았어요. 리더에게 관리자에게 연락해 달라고 해 주세요.', e_net: '대화방에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.', e_slow: '너무 빨라요. 잠시 후 보내 주세요', e_full: '오늘은 메시지가 너무 많아요. 내일 이어서 이야기해요', e_forbid: '내 메시지만 삭제할 수 있어요', e_empty: '내용을 입력해 주세요', e_nochurch: '교회를 찾을 수 없어요', tip: '서로 존중하고 사랑 안에서 참된 것을 말해요. 개인 정보와 기도 제목은 신중하게 나눠 주세요. 리더는 부적절한 메시지를 삭제할 수 있어요.', leader: '리더' }
 };
 function CCs(k, a) { var d = CCT[L()] || CCT.zh, s = d[k]; if (s == null) s = CCT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
 function ccErr(e) { if (e === 'badpin') return CT('e_badpin'); if (e === 'http404' || e === 'nodb' || e === 'notfound') return CCs('notReady'); return CCs('e_' + e) !== 'e_' + e ? CCs('e_' + e) : CCs('e_net'); }
@@ -477,7 +477,7 @@ h += '<div class="ccm' + (m.mine ? ' mine' : '') + '" id="ccm' + m.id + '">' +
 (m.kind ? caHtml(m, q) : '<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>')) +
 (sel && !m.del ? '<div class="ccacts"><button onclick="ccReply(' + m.id + ')">↩ ' + esc(CCs('reply')) + '</button><button onclick="ccCopy(' + m.id + ')">' + esc(CCs('copy')) + '</button>' +
 (!m.mine && m.who && window.XJ321 ? '<button onclick="ccDm(\'' + esc(m.who) + '\',' + m.id + ')">✉️ ' + esc(CA('私訊', '私信', 'Message', '개인 메시지')) + '</button>' : '') +
-((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(CC.arm === m.id ? CCs('armDel') : CCs('del')) + '</button>' : '') + '</div>' : '') +
+((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(m.mine ? (CC.arm === m.id ? CA('再按一次收回', '再按一次收回', 'Tap again to unsend', '한 번 더 누르면 취소돼요') : '↩️ ' + CA('收回', '收回', 'Unsend', '보내기 취소')) : (CC.arm === m.id ? CCs('armDel') : CCs('del'))) + '</button>' : '') + '</div>' : '') +
 '</div><div class="cctime">' + (m.kind && !m.del ? '<button class="camore" onclick="ccTap(' + m.id + ')" aria-label="more">⋯</button>' : '') + ccTime(m.ts) + '</div></div>';
 });
 return h;
@@ -544,13 +544,14 @@ var m = ccFind(id); if (!m) return;
 try { navigator.clipboard.writeText(m.text).then(function () { toast(CCs('copied')); }, function () { toast(m.text); }); } catch (e) { toast(m.text); }
 CC.sel = 0; ccPaint();
 }
-function ccDel(id) {
-if (CC.arm !== id) { CC.arm = id; ccPaint(); return; }
+function ccDel(id, now2) {
+if (!now2 && CC.arm !== id) { CC.arm = id; ccPaint(); return; }
 CC.arm = 0;
 ccApi('POST', '/c/' + S.ch.code + '/del', { id: id, dev: S.ch.dev, pin: S.ch.pin || '' }, function (j, e) {
 if (!j) return toast(ccErr(e));
-var m = ccFind(id); if (m) { m.del = 1; m.text = ''; }
-CC.sel = 0; ccPaint(); toast(CT('deleted'));
+var m = ccFind(id), mine = m && m.mine; if (m) { m.del = 1; m.text = ''; }
+var vw = $('#caView'); if (vw && vw.parentNode) vw.parentNode.removeChild(vw);
+CC.sel = 0; ccPaint(); toast(mine ? CA('已收回，大家都看不到了', '已收回，大家都看不到了', 'Unsent — no one can see it now', '보내기를 취소했어요') : CT('deleted'));
 });
 }
 function ccNeedNick() {
@@ -607,10 +608,21 @@ if (m.kind === 'voice' && m.att) return '<div class="cct cavoice">' + qh + '<aud
 if (m.att) return '<a class="cct cafile" href="' + esc(caUrl(m.att)) + '" target="_blank" rel="noopener" download="' + esc(mt.name || 'file') + '">' + qh + '<span class="fi">📄</span><span class="fn"><b>' + esc(mt.name || 'file') + '</b><small>' + esc(caSize(mt.size)) + ' · ' + esc(CA('點一下下載', '点一下下载', 'Tap to download', '눌러서 다운로드')) + '</small></span></a>';
 return '<div class="cct">' + chLink(m.text) + '</div>';
 }
+/* 看大圖時也能收回自己的相片（負責人可刪除別人的） */
+function caViewDel(att) {
+var mm = null; eachA(CC.msgs, function (m) { if (String(m.att) === String(att) && !m.del) mm = m; });
+if (!mm || !(mm.mine || (S.ch && S.ch.pin))) return '';
+return '<button class="btn sm" data-mine="' + (mm.mine ? 1 : 0) + '" onclick="caViewDelTap(this,' + mm.id + ')">' + esc(mm.mine ? '↩️ ' + CA('收回', '收回', 'Unsend', '보내기 취소') : CCs('del')) + '</button>';
+}
+function caViewDelTap(b, id) {
+if (b.getAttribute('data-arm')) { ccDel(id, 1); return; }
+b.setAttribute('data-arm', '1'); b.style.background = '#C8463C'; b.style.color = '#fff';
+b.textContent = b.getAttribute('data-mine') === '1' ? CA('再按一次收回', '再按一次收回', 'Tap again to unsend', '한 번 더 누르면 취소돼요') : CCs('armDel');
+}
 function caView(id) {
 var old = $('#caView'); if (old) old.parentNode.removeChild(old);
 var u = caUrl(id), el = document.createElement('div'); el.id = 'caView'; el.className = 'caview';
-el.innerHTML = '<img src="' + esc(u) + '" alt=""><div class="bar"><a class="btn sm" href="' + esc(u) + '" target="_blank" rel="noopener" download>' + esc(CA('下載／另存', '下载／另存', 'Download', '다운로드')) + '</a><button class="btn sm" onclick="var v=document.getElementById(\'caView\');v.parentNode.removeChild(v)">' + esc(CA('關閉', '关闭', 'Close', '닫기')) + '</button></div>';
+el.innerHTML = '<img src="' + esc(u) + '" alt=""><div class="bar"><a class="btn sm" href="' + esc(u) + '" target="_blank" rel="noopener" download>' + esc(CA('下載／另存', '下载／另存', 'Download', '다운로드')) + '</a>' + caViewDel(id) + '<button class="btn sm" onclick="var v=document.getElementById(\'caView\');v.parentNode.removeChild(v)">' + esc(CA('關閉', '关闭', 'Close', '닫기')) + '</button></div>';
 el.onclick = function (e) { if (e.target === el || e.target.tagName === 'IMG') el.parentNode.removeChild(el); };
 document.body.appendChild(el);
 }
