@@ -11,7 +11,9 @@
      3. 進入這個 Worker → Edit code → 把本檔全部內容貼上取代 → Deploy
      4. Worker → Settings → Bindings → Add → D1 database
           Variable name 填 DB，Database 選 church-chat → Save / Deploy
-     5. 用瀏覽器打開 https://church-chat.spch321.workers.dev/ 看到
+     5. 同一頁 Bindings → Add → Service binding：Variable name 填 NEWS，Service 選 church-news → Add Binding
+        （讓聊天室能向 church-news 確認教會代碼與負責人密碼；同帳號 Worker 不能用公開網址互叫）
+     6. 用瀏覽器打開 https://church-chat.spch321.workers.dev/ 看到
           {"ok":true,"service":"church-chat"} 就完成了（資料表會自動建立）
 
    v2（2026-11-09）：關懷名單——弟兄姊妹自己同意後，把「稱呼、最近完成靈修的日期、
@@ -55,23 +57,31 @@ async function init(db) {
   ready = true;
 }
 
-/* 教會代碼是否存在（快取 12 小時） */
+/* 呼叫 church-news：同一個帳號的 Worker 之間不能用公開網址互叫（Cloudflare 錯誤 1042），
+   所以優先走「Service binding」（變數名稱 NEWS → church-news）；沒有綁定才退回公開網址。 */
+let ENV = null;
+function newsFetch(path, init) {
+  if (ENV && ENV.NEWS && typeof ENV.NEWS.fetch === 'function') return ENV.NEWS.fetch(new Request('https://church-news' + path, init));
+  return fetch(NEWS + path, init);
+}
+/* 教會代碼是否存在（快取 12 小時）。church-news 明確說「沒有這個教會」才擋；
+   暫時連不上（或還沒設定 Service binding）就先放行 10 分鐘，不讓聊天整個停擺。 */
 async function churchOk(db, code) {
   const now = Date.now();
   const row = await db.prepare('SELECT name, until FROM church WHERE code=?').bind(code).first();
   if (row && row.until > now) return row.name || '';
-  let r;
-  try { r = await fetch(NEWS + '/c/' + code); } catch (e) { return row ? (row.name || '') : null; }
-  let j = null; try { j = await r.json(); } catch (e) {}
-  if (!j || !j.ok) return null;
-  await db.prepare('INSERT OR REPLACE INTO church(code,name,until) VALUES(?,?,?)').bind(code, j.name || '', now + 12 * 3600e3).run();
-  return j.name || '';
+  let j = null;
+  try { const r = await newsFetch('/c/' + code); j = await r.json(); } catch (e) { j = null; }
+  if (j && j.ok === false && /nochurch|notfound/.test(String(j.err || ''))) return null;
+  const ok = !!(j && j.ok);
+  await db.prepare('INSERT OR REPLACE INTO church(code,name,until) VALUES(?,?,?)').bind(code, ok ? (j.name || '') : (row ? row.name : ''), now + (ok ? 12 * 3600e3 : 600e3)).run();
+  return ok ? (j.name || '') : (row ? (row.name || '') : '');
 }
 /* 負責人密碼（交給 church-news 驗證，聊天室本身不存密碼） */
 async function leaderOk(code, pin) {
   if (!pin) return false;
   try {
-    const r = await fetch(NEWS + '/c/' + code + '/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, day: new Date().toISOString().slice(0, 10) }) });
+    const r = await newsFetch('/c/' + code + '/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, day: new Date().toISOString().slice(0, 10) }) });
     const j = await r.json();
     return !!(j && j.ok);
   } catch (e) { return false; }
@@ -103,6 +113,7 @@ async function list(db, code, after, dev) {
 export default {
   async fetch(req, env) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
+    ENV = env;
     if (!env.DB) return bad('nodb', 500);
     const db = env.DB; await init(db);
     const url = new URL(req.url);
