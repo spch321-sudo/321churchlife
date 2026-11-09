@@ -30,6 +30,9 @@
         ② 小家可以登記「從這個小家長出來的 235 團隊」：POST /c/小家代碼/link、GET /c/小家代碼/links。
         ③ 關懷名單多記每個人有沒有 2（屬靈同伴）、3（屬靈父母兒女）、5（五重團隊）的關係（t2／t3／t5，只是數量）。
         一樣只要重新貼上、Deploy，不必新增任何綁定。
+   v8（2026-11-09）：表情回應 POST /react；公告 POST /pin（小家／教會要家長或負責人密碼，團隊與私訊人人可設）；
+        投票與挑日子（kind=poll，POST /vote，發起人可結束）；位置（kind=loc）；活動（kind=evt）；搜尋 GET /search?q=。
+        /msgs 與 /send 多回：rx（表情）、vt（投票）、pc（已結束的投票）、lo（這批資料涵蓋的最小訊息編號）、pin（目前公告）。
    v7（2026-11-09）：收回與無痕收回。/del 帶 hide:1（只限自己的訊息）＝無痕收回（del=2，清單裡完全不出現）；
         /msgs 多回 dels：[[id, 1或2], …]，讓已經載入的手機也跟著收回。
    v6（2026-11-09）：私訊。同一個小家／教會／團隊裡的兩個人可以一對一聊天（也能傳相片、檔案、語音、貼圖）。
@@ -47,6 +50,7 @@ const CHUNK = 900000;           // 每段 base64 字元數（D1 每列上限約 
 const IMG_MIME = /^image\/(jpeg|png|gif|webp)$/;
 const AUD_MIME = /^audio\/(mp4|webm|ogg|mpeg|aac|x-m4a|wav)$/;
 const STK = /^[a-z0-9_-]{1,24}$/;
+const RX = ['pray', 'love', 'like', 'praise', 'sad', 'hug'];   /* 🙏 ❤️ 👍 🙌 😢 🤗 */
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -86,6 +90,9 @@ async function init(db) {
     try { await db.prepare('ALTER TABLE member ADD COLUMN ' + col).run(); } catch (e) { }
   }
   try { await db.prepare(`CREATE TABLE IF NOT EXISTS dmn (code TEXT NOT NULL, who TEXT NOT NULL, nick TEXT, ts INTEGER, PRIMARY KEY (code, who))`).run(); } catch (e) { }
+  try { await db.prepare(`CREATE TABLE IF NOT EXISTS rx (code TEXT NOT NULL, id INTEGER NOT NULL, dev TEXT NOT NULL, nick TEXT, e TEXT, ts INTEGER, PRIMARY KEY (code, id, dev))`).run(); } catch (e) { }
+  try { await db.prepare(`CREATE TABLE IF NOT EXISTS vote (code TEXT NOT NULL, id INTEGER NOT NULL, dev TEXT NOT NULL, opt INTEGER NOT NULL, nick TEXT, ts INTEGER, PRIMARY KEY (code, id, dev, opt))`).run(); } catch (e) { }
+  try { await db.prepare(`CREATE TABLE IF NOT EXISTS pin (code TEXT PRIMARY KEY, id INTEGER, ts INTEGER)`).run(); } catch (e) { }
   try { await db.prepare(`CREATE TABLE IF NOT EXISTS link (code TEXT NOT NULL, team TEXT NOT NULL, name TEXT, kind TEXT, ts INTEGER, PRIMARY KEY (code, team))`).run(); } catch (e) { }
   ready = true;
 }
@@ -140,12 +147,34 @@ async function list(db, code, after, dev) {
   const out = [];
   for (const m of rs.results || []) {
     if (m.del === 2) continue;   /* 無痕收回：連「已收回」都不留 */
-    const o = { id: m.id, ts: m.ts, nick: m.nick, text: m.del ? '' : m.text, re: m.re || 0, del: m.del ? 1 : 0, mine: m.dev === dev ? 1 : 0, who: await tag(m.dev) };
-    if (m.kind && !m.del) { o.kind = m.kind; if (m.att) o.att = m.att; try { o.meta = JSON.parse(m.meta || '{}'); } catch (e) { o.meta = {}; } }
-    out.push(o);
+    out.push(await fmt(m, dev));
   }
   return out;
 }
+async function fmt(m, dev) {
+  {
+    const o = { id: m.id, ts: m.ts, nick: m.nick, text: m.del ? '' : m.text, re: m.re || 0, del: m.del ? 1 : 0, mine: m.dev === dev ? 1 : 0, who: await tag(m.dev) };
+    if (m.kind && !m.del) { o.kind = m.kind; if (m.att) o.att = m.att; try { o.meta = JSON.parse(m.meta || '{}'); } catch (e) { o.meta = {}; } }
+    return o;
+  }
+}
+/* v8：一批訊息附帶的表情、投票、已結束投票與公告（lo＝涵蓋的最小訊息編號，手機據此整批替換） */
+async function pack(db, room, after, dev) {
+  const msgs = await list(db, room, after, dev);
+  let lo = after > 0 ? Math.max(0, after - 300) : (msgs.length ? msgs[0].id : 0);
+  const rx = {}, vt = {}, pc = [];
+  const r1 = await db.prepare('SELECT id,dev,nick,e FROM rx WHERE code=? AND id>=? ORDER BY ts').bind(room, lo).all();
+  for (const x of r1.results || []) (rx[x.id] = rx[x.id] || []).push([x.e, x.nick || '', x.dev === dev ? 1 : 0]);
+  const r2 = await db.prepare('SELECT id,dev,nick,opt FROM vote WHERE code=? AND id>=? ORDER BY ts').bind(room, lo).all();
+  for (const x of r2.results || []) (vt[x.id] = vt[x.id] || []).push([x.opt, x.nick || '', x.dev === dev ? 1 : 0]);
+  const r3 = await db.prepare("SELECT id FROM msg WHERE code=? AND id>=? AND kind='poll' AND del=0 AND meta LIKE '%\"closed\":1%'").bind(room, lo).all();
+  for (const x of r3.results || []) pc.push(x.id);
+  let pin = null;
+  const pr = await db.prepare('SELECT id FROM pin WHERE code=?').bind(room).first();
+  if (pr && pr.id) { const m = await db.prepare('SELECT id,ts,dev,nick,text,re,del,kind,att,meta FROM msg WHERE id=? AND code=?').bind(pr.id, room).first(); if (m && !m.del) pin = await fmt(m, dev); }
+  return { msgs, rx, vt, pc, lo, pin };
+}
+function okDate(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ''; }
 
 /* 取相片／檔案：相片直接顯示；其他檔案一律當下載（不在本網域開網頁，避免夾帶程式） */
 /* 私訊房間：DM:群組代碼:兩人代號（排序）。with 不合法或是自己就回 null */
@@ -193,7 +222,7 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat', v: 7, att: true, team: true, dm: true, unsend: true, news: !!(env.NEWS && env.NEWS.fetch) });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 8, att: true, team: true, dm: true, unsend: true, react: true, poll: true, pin: true, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
     if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0, clean(url.searchParams.get('dev'), 64));
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
@@ -205,11 +234,22 @@ export default {
       const dev = clean(url.searchParams.get('dev'), 64);
       const room = await roomOf(code, clean(url.searchParams.get('with'), 8), dev);
       if (!room) return bad('with');
-      const msgs = await list(db, room, after, dev);
+      const pk = await pack(db, room, after, dev);
       /* 收回同步：已經看到的訊息被收回時，讓手機也跟著改（[id, 1＝留下「已收回」, 2＝無痕]） */
       let dels = [];
       if (after > 0) { const rd = await db.prepare('SELECT id,del FROM msg WHERE code=? AND del>0 AND id>? AND id<=? ORDER BY id DESC LIMIT 100').bind(room, Math.max(0, after - 300), after).all(); dels = (rd.results || []).map(x => [x.id, x.del === 2 ? 2 : 1]); }
-      return J({ ok: true, msgs, dels, now: Date.now() });
+      return J({ ok: true, ...pk, dels, now: Date.now() });
+    }
+    if (req.method === 'GET' && act === 'search') {
+      const dev = clean(url.searchParams.get('dev'), 64);
+      const room = await roomOf(code, clean(url.searchParams.get('with'), 8), dev);
+      if (!room) return bad('with');
+      const q = clean(url.searchParams.get('q'), 30);
+      if (!q) return J({ ok: true, msgs: [] });
+      const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
+      const rs = await db.prepare("SELECT id,ts,dev,nick,text,re,del,kind,att,meta FROM msg WHERE code=? AND del=0 AND (text LIKE ? ESCAPE '\\' OR nick LIKE ? ESCAPE '\\') ORDER BY id DESC LIMIT 60").bind(room, like, like).all();
+      const out = []; for (const m of rs.results || []) out.push(await fmt(m, dev));
+      return J({ ok: true, msgs: out });
     }
     if (req.method === 'GET' && act === 'dms') {
       const dev = clean(url.searchParams.get('dev'), 64);
@@ -242,9 +282,25 @@ export default {
     if (act === 'send') {
       let text = clean(b.text, MAX_TEXT);
       const nick = clean(b.nick, 20) || '弟兄姊妹';
-      const kind = ['img', 'file', 'stk', 'voice'].indexOf(b.kind) >= 0 ? b.kind : '';
+      const kind = ['img', 'file', 'stk', 'voice', 'poll', 'loc', 'evt'].indexOf(b.kind) >= 0 ? b.kind : '';
       let meta = null, attData = null;
-      if (kind === 'stk') {
+      if (kind === 'poll') {
+        const P = b.poll || {}, q = clean(P.q, 120), opts = (Array.isArray(P.opts) ? P.opts : []).map(x => clean(x, 60)).filter(Boolean).slice(0, 12);
+        if (!q || opts.length < 2) return bad('poll');
+        meta = { q, opts, multi: P.multi ? 1 : 0, dates: P.dates ? 1 : 0 };
+        text = (P.dates ? '📅 挑日子：' : '📊 投票：') + q;
+      } else if (kind === 'loc') {
+        const lat = +b.lat, lng = +b.lng, addr = clean(b.addr, 120), hasXY = b.lat != null && b.lng != null && isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+        if (!hasXY && !addr) return bad('loc');
+        meta = { label: clean(b.label, 80), addr };
+        if (hasXY) { meta.lat = Math.round(lat * 1e6) / 1e6; meta.lng = Math.round(lng * 1e6) / 1e6; }
+        text = '📍 ' + (meta.label || addr || '位置');
+      } else if (kind === 'evt') {
+        const E = b.evt || {}, title = clean(E.title, 60), date = okDate(clean(E.date, 10));
+        if (!title || !date) return bad('evt');
+        meta = { title, date, time: /^\d{2}:\d{2}$/.test(E.time || '') ? E.time : '', end: /^\d{2}:\d{2}$/.test(E.end || '') ? E.end : '', place: clean(E.place, 80), note: clean(E.note, 300) };
+        text = '🗓️ ' + title + ' ' + date + (meta.time ? ' ' + meta.time : '');
+      } else if (kind === 'stk') {
         const k = clean(b.stk, 24); if (!STK.test(k)) return bad('stk');
         meta = { stk: k }; if (!text) text = '[貼圖]';
       } else if (kind) {
@@ -287,9 +343,11 @@ export default {
         await db.prepare('DELETE FROM msg WHERE ts<?').bind(old).run();
         await db.prepare('DELETE FROM attc WHERE att IN (SELECT id FROM att WHERE ts<?)').bind(old).run();
         await db.prepare('DELETE FROM att WHERE ts<?').bind(old).run();
+        await db.prepare('DELETE FROM rx WHERE ts<?').bind(old).run();
+        await db.prepare('DELETE FROM vote WHERE ts<?').bind(old).run();
       }
       const after = parseInt(b.after, 10) || 0;
-      return J({ ok: true, msgs: await list(db, room, after, dev), now });
+      return J({ ok: true, ...(await pack(db, room, after, dev)), now });
     }
     if (act === 'del') {
       const id = parseInt(b.id, 10); if (!id) return bad('id');
@@ -300,6 +358,56 @@ export default {
       if (m.dev !== dev && (room !== code || !(await leaderOk(code, b.pin)))) return bad('forbid', 403);
       await db.prepare('UPDATE msg SET del=?, text=\'\', meta=NULL WHERE id=?').bind(b.hide && m.dev === dev ? 2 : 1, id).run();
       if (m.att) { await db.prepare('DELETE FROM attc WHERE att=?').bind(m.att).run(); await db.prepare('DELETE FROM att WHERE id=?').bind(m.att).run(); }
+      await db.prepare('DELETE FROM rx WHERE code=? AND id=?').bind(room, id).run();
+      await db.prepare('DELETE FROM vote WHERE code=? AND id=?').bind(room, id).run();
+      await db.prepare('DELETE FROM pin WHERE code=? AND id=?').bind(room, id).run();
+      return J({ ok: true });
+    }
+    /* v8：表情回應（每人每則一個，再按同一個就取消） */
+    if (act === 'react') {
+      const id = parseInt(b.id, 10); if (!id) return bad('id');
+      const e = RX.indexOf(b.e) >= 0 ? b.e : ''; if (!e) return bad('e');
+      const room = await roomOf(code, clean(b.with, 8), dev); if (!room) return bad('with');
+      const m = await db.prepare('SELECT del FROM msg WHERE id=? AND code=?').bind(id, room).first();
+      if (!m || m.del) return bad('gone', 404);
+      const old = await db.prepare('SELECT e FROM rx WHERE code=? AND id=? AND dev=?').bind(room, id, dev).first();
+      if (old && old.e === e) await db.prepare('DELETE FROM rx WHERE code=? AND id=? AND dev=?').bind(room, id, dev).run();
+      else await db.prepare('INSERT OR REPLACE INTO rx(code,id,dev,nick,e,ts) VALUES(?,?,?,?,?,?)').bind(room, id, dev, clean(b.nick, 20) || '弟兄姊妹', e, Date.now()).run();
+      const r = await db.prepare('SELECT dev,nick,e FROM rx WHERE code=? AND id=? ORDER BY ts').bind(room, id).all();
+      return J({ ok: true, id, rx: (r.results || []).map(x => [x.e, x.nick || '', x.dev === dev ? 1 : 0]) });
+    }
+    /* v8：投票／挑日子。opts＝我選的選項（整批取代）；close:1＝發起人結束投票 */
+    if (act === 'vote') {
+      const id = parseInt(b.id, 10); if (!id) return bad('id');
+      const room = await roomOf(code, clean(b.with, 8), dev); if (!room) return bad('with');
+      const m = await db.prepare('SELECT dev,del,kind,meta FROM msg WHERE id=? AND code=?').bind(id, room).first();
+      if (!m || m.del || m.kind !== 'poll') return bad('gone', 404);
+      let meta = {}; try { meta = JSON.parse(m.meta || '{}'); } catch (e) { }
+      if (b.close) {
+        if (m.dev !== dev) return bad('forbid', 403);
+        meta.closed = b.close === -1 ? 0 : 1; if (!meta.closed) delete meta.closed;
+        await db.prepare('UPDATE msg SET meta=? WHERE id=?').bind(JSON.stringify(meta), id).run();
+      } else {
+        if (meta.closed) return bad('closed');
+        let opts = (Array.isArray(b.opts) ? b.opts : []).map(x => parseInt(x, 10)).filter(x => x >= 0 && x < (meta.opts || []).length);
+        opts = [...new Set(opts)]; if (!meta.multi) opts = opts.slice(0, 1);
+        await db.prepare('DELETE FROM vote WHERE code=? AND id=? AND dev=?').bind(room, id, dev).run();
+        const nick = clean(b.nick, 20) || '弟兄姊妹', now = Date.now();
+        for (const o of opts) await db.prepare('INSERT INTO vote(code,id,dev,opt,nick,ts) VALUES(?,?,?,?,?,?)').bind(room, id, dev, o, nick, now).run();
+      }
+      const r = await db.prepare('SELECT dev,nick,opt FROM vote WHERE code=? AND id=? ORDER BY ts').bind(room, id).all();
+      return J({ ok: true, id, closed: meta.closed ? 1 : 0, vt: (r.results || []).map(x => [x.opt, x.nick || '', x.dev === dev ? 1 : 0]) });
+    }
+    /* v8：公告（釘選一則訊息；id=0 取消）。小家／教會聊天室要家長／負責人密碼，235 團隊與私訊人人可設 */
+    if (act === 'pin') {
+      const id = parseInt(b.id, 10) || 0;
+      const room = await roomOf(code, clean(b.with, 8), dev); if (!room) return bad('with');
+      if (room === code && !/^TM[A-Z0-9]{6}$/.test(code) && !(await leaderOk(code, b.pin))) return bad('forbid', 403);
+      if (id) {
+        const m = await db.prepare('SELECT del FROM msg WHERE id=? AND code=?').bind(id, room).first();
+        if (!m || m.del) return bad('gone', 404);
+        await db.prepare('INSERT OR REPLACE INTO pin(code,id,ts) VALUES(?,?,?)').bind(room, id, Date.now()).run();
+      } else await db.prepare('DELETE FROM pin WHERE code=?').bind(room).run();
       return J({ ok: true });
     }
     if (act === 'done') {
