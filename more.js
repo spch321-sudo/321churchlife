@@ -192,6 +192,8 @@ var u = chUnread();
 b.innerHTML = '<div class="card"><div class="wk" onclick="open_({t:\'church\'})"><div class="n">⛪</div><div class="grow"><b>' + esc(CT('myChurch')) + '</b><div class="xs muted">' + esc(S.ch ? S.ch.name : CT('joinHint')) + '</div></div>' + (u ? '<span class="chdot">' + u + '</span>' : '') + '</div></div>';
 }
 }
+/* 今天完成人數：教會消息服務的計數與「今天完成」名單取大的，兩邊才不會對不上 */
+function chTodayN(d) { var a = (d && d.today) || 0, b = (window.TD && TD.list && TD.day === today()) ? TD.list.length : 0; return Math.max(a, b); }
 function chHomeHtml() {
 if (!S.ch) {
 if (S.chHide) return '';
@@ -199,7 +201,7 @@ return '<div class="card chc0"><div class="row sp"><b>⛪ ' + esc(CT('togetherT'
 }
 var d = S.chData || {}, u = chUnread(), h = '<div class="card chc" onclick="open_({t:\'church\'})"><div class="row sp"><b>⛪ ' + esc(S.ch.name) + '</b>' + (u ? '<span class="chdot">' + esc(CT('newN', u)) + '</span>' : '<span class="xs muted">' + esc(CT('open')) + ' ›</span>') + '</div>';
 if (d.plan) h += '<div class="chplan" onclick="event.stopPropagation();open_({t:\'lesson\',w:' + d.plan.w + ',d:' + (d.plan.d || 1) + '})"><span class="xs">' + esc(CT('planT')) + '</span><b>' + esc(chPlanTxt(d.plan)) + '</b><span class="xs">' + esc(CT('goRead')) + ' ›</span></div>';
-if (d.today != null) h += '<p class="sm" style="margin:8px 0 0">🙏 ' + esc(d.today ? CT('todayN', d.today) : CT('today0')) + '</p>';
+var tdn = chTodayN(d); if (d.today != null || tdn) h += '<p class="sm" style="margin:8px 0 0">🙏 ' + esc(tdn ? CT('todayN', tdn) : CT('today0')) + '</p>';
 if (window.tdHtml) h += tdHtml(true);
 var ns = d.news || [];
 for (var i = 0; i < ns.length && i < 2; i++) h += '<p class="sm chline">' + (ns[i].top ? '📌 ' : '') + '<span class="tag">' + esc(chKind(ns[i].kind)) + '</span> ' + esc(chTi(ns[i]) || String(chBo(ns[i]) || '').slice(0, 30)) + '</p>';
@@ -207,17 +209,17 @@ return h + '</div>';
 }
 function vChurch() {
 if (!S.ch) return chJoinView();
+setTimeout(chTdSync, 0);
 var d = S.chData, adm = !!S.ch.pin;
 var h = topbar(S.ch.name, true, '<button class="ib" onclick="chRefresh()" aria-label="refresh">⟳</button>');
 if (!d) { setApp(h + '<div class="empty">' + esc(T('loading')) + '</div>'); return chFetch(true, function (j, e) { if (R.page && R.page.t === 'church') { if (j) vChurch(); else setApp(h + '<div class="empty">' + esc(chErr(e)) + '<br><br><button class="btn" onclick="chRefresh()">' + esc(T('retry')) + '</button></div>'); } }); }
 if (CH.off) h += '<p class="xs muted c">' + esc(CT('offline')) + '</p>';
 h += '<div class="card chhead"><div class="row sp"><div><p class="eyebrow" style="margin:0">' + esc(CT('myChurch')) + '</p><div class="h2" style="margin:2px 0">' + esc(d.name) + '</div><span class="xs muted">' + esc(CT('codeIs', d.code)) + '</span></div>' + (adm ? '<span class="tag">' + esc(CT('leader')) + '</span>' : '') + '</div><div class="row" style="margin-top:10px"><button class="btn grow" onclick="chInvite()">' + esc(CT('invite')) + '</button></div></div>';
-h += '<div class="grid2"><div class="tile c"><div class="h2" style="color:var(--brand);margin:0">' + (d.today || 0) + '</div><span class="xs muted">' + esc(CT('todayLbl')) + '</span></div>' +
+h += '<div class="grid2"><div class="tile c"><div class="h2" style="color:var(--brand);margin:0">' + chTodayN(d) + '</div><span class="xs muted">' + esc(CT('todayLbl')) + '</span></div>' +
 (d.plan ? '<div class="tile c" style="cursor:pointer" onclick="open_({t:\'lesson\',w:' + d.plan.w + ',d:' + (d.plan.d || 1) + '})"><span class="xs muted">' + esc(CT('planT')) + '</span><b style="color:var(--brand)">' + esc(T('wkN', d.plan.w) + (d.plan.d ? ' · ' + T('dN', d.plan.d) : '')) + '</b><span class="xs muted">' + esc(T('wt' + d.plan.w)) + '</span></div>' : '<div class="tile c"><span class="xs muted">' + esc(CT('planT')) + '</span><span class="sm muted">' + esc(CT('noPlan')) + '</span></div>') + '</div>';
 if (d.plan && d.plan.note) h += '<p class="sm chnote">「' + esc(d.plan.note) + '」</p>';
 if (window.tdHtml) h += '<div id="tdCard">' + tdHtml(false) + '</div>';
 if (window.ccCardHtml) { ccCss(); h += '<div id="ccCard">' + ccCardHtml() + '</div>'; }
-if (window.xjEntryHtml) h += xjEntryHtml();
 if (window.crgAskHtml) h += crgAskHtml();
 if (adm && window.vChCare) h += '<div class="card cccard" onclick="CR2.list=null;CR2.err=\'\';open_({t:\'chcare\'})"><div class="row"><div class="ccic">🤝</div><div class="grow"><b>' + esc(CRs('care')) + '</b><div class="xs muted">' + esc(CRs('careD')) + '</div></div><span class="xs muted">›</span></div></div>';
 if (adm) h += '<div class="row chadm"><button class="btn pri grow" onclick="chEdit(\'\')">＋ ' + esc(CT('post')) + '</button><button class="btn" onclick="chPlanEd()">' + esc(CT('setPlan')) + '</button><button class="btn" onclick="chMore()">⋯</button></div>';
@@ -257,7 +259,6 @@ h += '<div class="card"><p class="eyebrow">' + esc(CT('newChurch')) + '</p><p cl
 '<input id="chp2" class="inp" type="password" maxlength="64" placeholder="' + esc(CT('pin2Lbl')) + '" style="margin-top:8px">' +
 (CH.needKey ? '<input id="chk" class="inp" maxlength="64" placeholder="' + esc(CT('keyLbl')) + '" style="margin-top:8px">' : '') +
 '<button class="btn full" style="margin-top:10px" onclick="chCreate()">' + esc(CT('createBtn')) + '</button></div>';
-if (window.xjEntryHtml) { ccCss(); h += xjEntryHtml(); }
 setApp(h);
 }
 function chJoin() {
@@ -830,11 +831,12 @@ if (!TDT || !S.ch) return '';
 var hide = !!S.ch.hideName;
 return '<div class="row crgline"><span class="xs muted grow">🌟 ' + esc(TDs('showMe')) + '：' + esc(hide ? TDs('off') : TDs('on')) + '</span><button class="btn sm" onclick="tdToggle()">' + esc(hide ? TDs('showBtn') : TDs('hideBtn')) + '</button></div>';
 }
+function chTdRe() { if (R.page && R.page.t === 'church') vChurch(); else if (!R.page && R.tab === 'chtab') vChTab(); }
 function tdToggle() {
 S.ch.hideName = S.ch.hideName ? 0 : 1; save();
 var d = today();
-if (S.ch.day === d || TD.mine) ccApi('POST', '/c/' + S.ch.code + '/done', { dev: S.ch.dev, nick: trim(S.name), day: d, hide: S.ch.hideName ? 1 : 0 }, function (j) { if (j) { TD.list = j.list; TD.day = d; TD.at = now(); } if (R.page && R.page.t === 'church') vChurch(); });
-else if (R.page && R.page.t === 'church') vChurch();
+if (S.ch.day === d || S.ch.tdDay === d || TD.mine) ccApi('POST', '/c/' + S.ch.code + '/done', { dev: S.ch.dev, nick: trim(S.name), day: d, hide: S.ch.hideName ? 1 : 0 }, function (j) { if (j) { TD.list = j.list; TD.day = d; TD.at = now(); } chTdRe(); });
+else chTdRe();
 }
 function tdCss() {
 if ($('#tdCss')) return;
@@ -899,12 +901,13 @@ try { navigator.clipboard.writeText(t).then(function () { toast(CCs('copied')); 
 /* 完成一課就呼叫（finishLesson → chFinish）：送到今天完成名單，再放獎勵動畫 */
 function chFinish(isNew) {
 if (!isNew) return;
+try { if (window.XJ321) XJ321.autoDone(); } catch (e) { }
 if (!S.ch) { chReward(0, []); return; }
 if (!S.ch.dev) S.ch.dev = uid();
 var d = today(), shown = 0;
 var t = setTimeout(function () { shown = 1; chReward(0, TD.day === d ? TD.list : []); }, 2500);
 ccApi('POST', '/c/' + S.ch.code + '/done', { dev: S.ch.dev, nick: trim(S.name), day: d, hide: S.ch.hideName ? 1 : 0 }, function (j) {
-if (j) { TD.list = j.list; TD.day = d; TD.at = now(); TD.mine = 1; }
+if (j) { TD.list = j.list; TD.day = d; TD.at = now(); TD.mine = 1; S.ch.tdDay = d; save(); }
 if (shown) return; clearTimeout(t);
 chReward(j ? j.rank : 0, j ? j.list : []);
 });
@@ -914,7 +917,7 @@ try { tdCss(); } catch (e) { }
 /* ── 我的小家（xj1109，2026-11-09）：在「我的教會」裡建立／加入小家，小家聊天室、今天完成、關懷名單、消息 ──
    共用空中團契的 xj.js（同一份檔案），這裡只提供宿主掛鉤；存檔前綴 cl321_，和空中團契的小家分開。
    後端沿用 church-news（小家本身）與 church-chat（聊天、附件、今天完成、關懷）。 */
-var XJ_T2S = {"並": "并", "亞": "亚", "佈": "布", "來": "来", "係": "系", "個": "个", "們": "们", "傳": "传", "儲": "储", "內": "内", "兩": "两", "別": "别", "刪": "删", "則": "则", "動": "动", "務": "务", "勵": "励", "參": "参", "啟": "启", "單": "单", "嗎": "吗", "國": "国", "圖": "图", "團": "团", "堅": "坚", "實": "实", "寫": "写", "將": "将", "對": "对", "導": "导", "幾": "几", "張": "张", "後": "后", "從": "从", "愛": "爱", "懷": "怀", "換": "换", "擊": "击", "數": "数", "時": "时", "書": "书", "會": "会", "樂": "乐", "標": "标", "樣": "样", "機": "机", "檔": "档", "權": "权", "歡": "欢", "沒": "没", "瀏": "浏", "為": "为", "燈": "灯", "獎": "奖", "獻": "献", "現": "现", "畫": "画", "當": "当", "發": "发", "確": "确", "碼": "码", "禱": "祷", "種": "种", "稱": "称", "穌": "稣", "筆": "笔", "節": "节", "紀": "纪", "約": "约", "細": "细", "組": "组", "結": "结", "絡": "络", "給": "给", "經": "经", "網": "网", "綴": "缀", "線": "线", "繼": "继", "續": "续", "聯": "联", "聲": "声", "腳": "脚", "與": "与", "舊": "旧", "華": "华", "著": "着", "處": "处", "裝": "装", "裡": "里", "製": "制", "複": "复", "親": "亲", "覽": "览", "訊": "讯", "託": "托", "記": "记", "設": "设", "許": "许", "試": "试", "詩": "诗", "話": "话", "認": "认", "語": "语", "誠": "诚", "說": "说", "請": "请", "謝": "谢", "譯": "译", "讀": "读", "讓": "让", "讚": "赞", "貼": "贴", "資": "资", "載": "载", "輸": "输", "這": "这", "連": "连", "進": "进", "過": "过", "還": "还", "錄": "录", "錯": "错", "鐘": "钟", "長": "长", "閉": "闭", "開": "开", "間": "间", "關": "关", "隨": "随", "隱": "隐", "離": "离", "頁": "页", "頂": "顶", "頭": "头", "題": "题", "願": "愿", "類": "类", "顧": "顾", "顯": "显", "風": "风", "馬": "马", "麥": "麦", "麼": "么", "點": "点"};
+var XJ_T2S = {"並": "并", "亞": "亚", "佈": "布", "來": "来", "係": "系", "個": "个", "們": "们", "傳": "传", "儲": "储", "內": "内", "兩": "两", "別": "别", "刪": "删", "則": "则", "剛": "刚", "動": "动", "務": "务", "勵": "励", "參": "参", "啟": "启", "單": "单", "嗎": "吗", "國": "国", "圖": "图", "團": "团", "堅": "坚", "實": "实", "寫": "写", "將": "将", "對": "对", "導": "导", "幾": "几", "張": "张", "後": "后", "從": "从", "愛": "爱", "懷": "怀", "掛": "挂", "換": "换", "擊": "击", "數": "数", "時": "时", "書": "书", "會": "会", "樂": "乐", "標": "标", "樣": "样", "機": "机", "檔": "档", "權": "权", "歡": "欢", "沒": "没", "瀏": "浏", "為": "为", "燈": "灯", "獎": "奖", "獻": "献", "現": "现", "畫": "画", "當": "当", "發": "发", "確": "确", "碼": "码", "禱": "祷", "種": "种", "稱": "称", "穌": "稣", "筆": "笔", "節": "节", "紀": "纪", "約": "约", "細": "细", "組": "组", "結": "结", "絡": "络", "給": "给", "經": "经", "網": "网", "綴": "缀", "線": "线", "繼": "继", "續": "续", "聯": "联", "聲": "声", "腳": "脚", "與": "与", "舊": "旧", "華": "华", "著": "着", "處": "处", "補": "补", "裝": "装", "裡": "里", "製": "制", "複": "复", "親": "亲", "覽": "览", "訊": "讯", "託": "托", "記": "记", "設": "设", "許": "许", "詞": "词", "試": "试", "詩": "诗", "話": "话", "認": "认", "語": "语", "誠": "诚", "說": "说", "課": "课", "請": "请", "謝": "谢", "譯": "译", "讀": "读", "讓": "让", "讚": "赞", "貼": "贴", "資": "资", "載": "载", "輸": "输", "這": "这", "連": "连", "進": "进", "過": "过", "還": "还", "鉤": "钩", "錄": "录", "錯": "错", "鐘": "钟", "長": "长", "閉": "闭", "開": "开", "間": "间", "關": "关", "隨": "随", "隱": "隐", "離": "离", "靈": "灵", "頁": "页", "頂": "顶", "頭": "头", "題": "题", "願": "愿", "類": "类", "顧": "顾", "顯": "显", "風": "风", "馬": "马", "麥": "麦", "麼": "么", "點": "点"};
 function xjZs(t) { var o = ''; t = String(t == null ? '' : t); for (var i = 0; i < t.length; i++) { var c = t.charAt(i); o += XJ_T2S[c] || c; } return o; }
 var XJR = { pages: {}, after: null };
 window.X321 = window.X321 || {};
@@ -931,8 +934,49 @@ window.X321.xj = {
   pageHead: function (eb, title, sub) { return '<p class="eyebrow" style="margin:4px 2px 2px">' + esc(eb) + '</p><div class="h2" style="margin:0 2px 2px">' + esc(title) + '</div>' + (sub ? '<p class="sm muted" style="margin:0 2px 10px">' + esc(sub) + '</p>' : ''); },
   sect: function (n, title) { return '<p class="eyebrow" style="margin:18px 2px 8px">' + esc(title) + '</p>'; },
   rowlink: function () { return ''; }, simp: function () { },
-  nTr: function (t, b, cb) { if (window.chTr) chTr(t, b, cb); else cb(null); }
+  nTr: function (t, b, cb) { if (window.chTr) chTr(t, b, cb); else cb(null); },
+  wordZh: '靈修', wordEn: 'devotion', autoDone: true,
+  myName: function () { return trim(S.name || ''); },
+  didToday: function () { return chDidToday(); },
+  goRead: function () { var n = window.nextLesson ? nextLesson() : null; if (n) open_({ t: 'lesson', w: n.w, d: n.d }); else go('course'); }
 };
+/* 今天有沒有完成任何一課（S.done 的時間戳是今天） */
+function chDidToday() { var t0 = new Date(); t0.setHours(0, 0, 0, 0); var ok = false; each(S.done || {}, function (k, v) { if ((+v || 0) >= t0.getTime()) ok = true; }); return ok; }
+/* 今天完成了課程、但教會的「今天完成」名單還沒有自己（例如這個功能上線前就讀完了）：補送一次 */
+function chTdSync() {
+if (!S.ch || !chDidToday()) return;
+var d = today(); if (S.ch.tdDay === d || chTdSync.busy) return;
+chTdSync.busy = 1; if (!S.ch.dev) S.ch.dev = uid();
+try { chDone(); } catch (e) { }
+ccApi('POST', '/c/' + S.ch.code + '/done', { dev: S.ch.dev, nick: trim(S.name), day: d, hide: S.ch.hideName ? 1 : 0 }, function (j) {
+chTdSync.busy = 0; if (!j) return;
+S.ch.tdDay = d; TD.list = j.list; TD.day = d; TD.at = now(); TD.mine = 1; save();
+var el = $('#tdCard'); if (el) el.innerHTML = tdHtml(false);
+var c = $('#chCard'); if (c) c.innerHTML = chHomeHtml();
+});
+}
+/* 底部「教會」分頁：我的教會＋我的小家 */
+function vChTab() {
+var l = L(), en = l === 'en' || l === 'ko', zs = l === 'zs';
+var tx = function (zh, e, k) { return l === 'ko' && k ? k : (en ? e : (zs ? xjZs(zh) : zh)); };
+var h = topbar(tx('教會', 'Church', '교회'));
+h += '<p class="eyebrow" style="margin:6px 2px 4px">⛪ ' + esc(tx('我的教會', 'My church', '나의 교회')) + '</p>';
+if (S.ch) h += '<div id="chCard">' + chHomeHtml() + '</div>' + (window.tdMeLine ? tdMeLine() : '');
+else h += '<div class="card chc0"><b>⛪ ' + esc(CT('togetherT')) + '</b><p class="sm muted" style="margin:6px 0 10px">' + esc(CT('togetherD')) + '</p><button class="btn pri" onclick="open_({t:\'church\'})">' + esc(CT('joinBtn')) + '</button></div>';
+h += '<p class="eyebrow" style="margin:18px 2px 4px">🏡 ' + esc(tx('我的小家', 'My small groups', '나의 소그룹')) + '</p>';
+var G = (window.XJ321 && XJ321.groups()) || [];
+if (!G.length) h += '<div class="card cccard" onclick="XJ321&&XJ321.open(\'\')"><div class="row"><div class="ccic">🏡</div><div class="grow"><b>' + esc(tx('建立或加入小家', 'Create or join a small group', '소그룹 만들기/참여')) + '</b><div class="xs muted">' + esc(tx('和小家家人一起靈修、聊天、彼此代禱；完成課程時名字會自動出現（可隱藏）', 'Devotions, chat and prayer together; your name appears when you finish a lesson (can be hidden)', '함께 묵상하고 대화하고 기도해요')) + '</div></div><span class="xs muted">›</span></div></div>';
+eachA(G, function (g) {
+h += '<div class="card cccard" onclick="XJ321.open(\'' + esc(g.code) + '\')"><div class="row"><div class="ccic">🏡</div><div class="grow"><b>' + esc(g.name) + (g.pin ? ' 🔑' : '') + '</b><div class="xs muted">' + esc(tx('小家代碼 ', 'Code ', '코드 ') + g.code) + (g.doneDay === today() ? ' · ✅ ' + esc(tx('今天已完成', 'done today', '오늘 완료')) : '') + '</div></div><span class="xs muted">›</span></div></div>';
+});
+if (G.length) h += '<button class="btn full" style="margin:4px 0 12px" onclick="XJ321.open(\'+\')">＋ ' + esc(tx('加入或建立其他小家', 'Join or create another group', '다른 소그룹 참여/만들기')) + '</button>';
+h += '<p class="xs muted" style="margin:10px 4px 20px">' + esc(tx('完成每天的課程，名字會自動出現在教會和每個小家的「今天完成」名單，一起歡喜；不想顯示可以在教會頁或小家頁設定隱藏。', 'When you finish a lesson, your name appears on “Finished today” for your church and each group. You can hide it in the church or group page.', '과를 마치면 교회와 소그룹의 “오늘 완료”에 이름이 나와요. 숨길 수도 있어요.')) + '</p>';
+setApp(h);
+chTdSync();
+try { if (window.XJ321) XJ321.autoSync(); } catch (e) { }
+if (S.ch) chFetch(false, function (j) { var el = $('#chCard'); if (j && el) el.innerHTML = chHomeHtml(); });
+if (S.ch && window.tdFetch) tdFetch(false, function () { var el = $('#chCard'); if (el) el.innerHTML = chHomeHtml(); });
+}
 function xjView(t) {
   var f = XJR.pages[t]; if (!f) return loading('🏡', 1);
   var ti = t === 'xjchat' ? '' : (t === 'xjcare' ? (L() === 'en' || L() === 'ko' ? 'Care list' : (L() === 'zs' ? '关怀名单' : '關懷名單')) : (L() === 'en' || L() === 'ko' ? 'My Small Group' : '我的小家'));

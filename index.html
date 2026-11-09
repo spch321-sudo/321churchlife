@@ -40,7 +40,7 @@ body.crOn .top{top:calc(40px + env(safe-area-inset-top));padding-top:10px}
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109';
+var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -345,6 +345,7 @@ course: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 one: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6M10 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>',
 serve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>',
 me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
+chtab: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M10 4h4"/><path d="M5 21V11l7-5 7 5v10"/><path d="M3 21h18"/><path d="M10 21v-5h4v5"/></svg>',
 back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
 set: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
 };
@@ -552,12 +553,14 @@ if (p.t === 'xj' || p.t === 'xjchat' || p.t === 'xjcare') return window.xjView ?
 if (R.tab === 'today') return vToday();
 if (R.tab === 'course') return vCourse();
 if (R.tab === 'one') return vOne();
+if (R.tab === 'chtab') return window.vChTab ? vChTab() : loading('⛪');
 if (R.tab === 'serve') return vServe();
 if (R.tab === 'me') return vMe();
 }
 function drawTabs() {
-var tabs = ['today', 'course', 'one', 'serve', 'me'], h = '';
-for (var i = 0; i < tabs.length; i++) h += '<button class="' + (R.tab === tabs[i] && !R.page ? 'on' : '') + '" onclick="go(\'' + tabs[i] + '\')">' + IC[tabs[i]] + '<span>' + esc(T('tab_' + tabs[i])) + '</span></button>';
+var tabs = ['today', 'course', 'one', 'chtab', 'serve', 'me'], h = '';
+var CHTAB_L = { zh: '教會', zs: '教会', en: 'Church', ko: '교회' };
+for (var i = 0; i < tabs.length; i++) h += '<button class="' + (R.tab === tabs[i] && !R.page ? 'on' : '') + '" onclick="go(\'' + tabs[i] + '\')">' + IC[tabs[i]] + '<span>' + esc(tabs[i] === 'chtab' ? (CHTAB_L[L()] || CHTAB_L.zh) : T('tab_' + tabs[i])) + '</span></button>';
 $('#tabbar').innerHTML = h;
 $('#fab').textContent = T('xzBtn');
 }
