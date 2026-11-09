@@ -217,6 +217,7 @@ h += '<div class="grid2"><div class="tile c"><div class="h2" style="color:var(--
 if (d.plan && d.plan.note) h += '<p class="sm chnote">「' + esc(d.plan.note) + '」</p>';
 if (window.tdHtml) h += '<div id="tdCard">' + tdHtml(false) + '</div>';
 if (window.ccCardHtml) { ccCss(); h += '<div id="ccCard">' + ccCardHtml() + '</div>'; }
+if (window.xjEntryHtml) h += xjEntryHtml();
 if (window.crgAskHtml) h += crgAskHtml();
 if (adm && window.vChCare) h += '<div class="card cccard" onclick="CR2.list=null;CR2.err=\'\';open_({t:\'chcare\'})"><div class="row"><div class="ccic">🤝</div><div class="grow"><b>' + esc(CRs('care')) + '</b><div class="xs muted">' + esc(CRs('careD')) + '</div></div><span class="xs muted">›</span></div></div>';
 if (adm) h += '<div class="row chadm"><button class="btn pri grow" onclick="chEdit(\'\')">＋ ' + esc(CT('post')) + '</button><button class="btn" onclick="chPlanEd()">' + esc(CT('setPlan')) + '</button><button class="btn" onclick="chMore()">⋯</button></div>';
@@ -256,6 +257,7 @@ h += '<div class="card"><p class="eyebrow">' + esc(CT('newChurch')) + '</p><p cl
 '<input id="chp2" class="inp" type="password" maxlength="64" placeholder="' + esc(CT('pin2Lbl')) + '" style="margin-top:8px">' +
 (CH.needKey ? '<input id="chk" class="inp" maxlength="64" placeholder="' + esc(CT('keyLbl')) + '" style="margin-top:8px">' : '') +
 '<button class="btn full" style="margin-top:10px" onclick="chCreate()">' + esc(CT('createBtn')) + '</button></div>';
+if (window.xjEntryHtml) { ccCss(); h += xjEntryHtml(); }
 setApp(h);
 }
 function chJoin() {
@@ -559,6 +561,7 @@ body.dev = S.ch.dev; body.nick = trim(S.name); body.re = CC.re || 0; body.after 
 ccApi('POST', '/c/' + S.ch.code + '/send', body, function (j, e) {
 CC.sending = 0; var b = $('#ccSend'); if (b) b.disabled = false;
 var up = $('#caUp'); if (up) up.style.display = 'none';
+if (!j && (e === 'slow' || e === 'http429') && !body._r) { body._r = 1; setTimeout(function () { ccPost(body, done); }, 1700); return; }
 if (!j) return toast(ccErr(e));
 var hadRe = CC.re, hadNick = !!$('#ccNick'); CC.re = 0;
 if (done) done();
@@ -907,3 +910,52 @@ chReward(j ? j.rank : 0, j ? j.list : []);
 });
 }
 try { tdCss(); } catch (e) { }
+
+/* ── 我的小家（xj1109，2026-11-09）：在「我的教會」裡建立／加入小家，小家聊天室、今天完成、關懷名單、消息 ──
+   共用空中團契的 xj.js（同一份檔案），這裡只提供宿主掛鉤；存檔前綴 cl321_，和空中團契的小家分開。
+   後端沿用 church-news（小家本身）與 church-chat（聊天、附件、今天完成、關懷）。 */
+var XJ_T2S = {"並": "并", "亞": "亚", "佈": "布", "來": "来", "係": "系", "個": "个", "們": "们", "傳": "传", "儲": "储", "內": "内", "兩": "两", "別": "别", "刪": "删", "則": "则", "動": "动", "務": "务", "勵": "励", "參": "参", "啟": "启", "單": "单", "嗎": "吗", "國": "国", "圖": "图", "團": "团", "堅": "坚", "實": "实", "寫": "写", "將": "将", "對": "对", "導": "导", "幾": "几", "張": "张", "後": "后", "從": "从", "愛": "爱", "懷": "怀", "換": "换", "擊": "击", "數": "数", "時": "时", "書": "书", "會": "会", "樂": "乐", "標": "标", "樣": "样", "機": "机", "檔": "档", "權": "权", "歡": "欢", "沒": "没", "瀏": "浏", "為": "为", "燈": "灯", "獎": "奖", "獻": "献", "現": "现", "畫": "画", "當": "当", "發": "发", "確": "确", "碼": "码", "禱": "祷", "種": "种", "稱": "称", "穌": "稣", "筆": "笔", "節": "节", "紀": "纪", "約": "约", "細": "细", "組": "组", "結": "结", "絡": "络", "給": "给", "經": "经", "網": "网", "綴": "缀", "線": "线", "繼": "继", "續": "续", "聯": "联", "聲": "声", "腳": "脚", "與": "与", "舊": "旧", "華": "华", "著": "着", "處": "处", "裝": "装", "裡": "里", "製": "制", "複": "复", "親": "亲", "覽": "览", "訊": "讯", "託": "托", "記": "记", "設": "设", "許": "许", "試": "试", "詩": "诗", "話": "话", "認": "认", "語": "语", "誠": "诚", "說": "说", "請": "请", "謝": "谢", "譯": "译", "讀": "读", "讓": "让", "讚": "赞", "貼": "贴", "資": "资", "載": "载", "輸": "输", "這": "这", "連": "连", "進": "进", "過": "过", "還": "还", "錄": "录", "錯": "错", "鐘": "钟", "長": "长", "閉": "闭", "開": "开", "間": "间", "關": "关", "隨": "随", "隱": "隐", "離": "离", "頁": "页", "頂": "顶", "頭": "头", "題": "题", "願": "愿", "類": "类", "顧": "顾", "顯": "显", "風": "风", "馬": "马", "麥": "麦", "麼": "么", "點": "点"};
+function xjZs(t) { var o = ''; t = String(t == null ? '' : t); for (var i = 0; i < t.length; i++) { var c = t.charAt(i); o += XJ_T2S[c] || c; } return o; }
+var XJR = { pages: {}, after: null };
+window.X321 = window.X321 || {};
+window.X321.xj = {
+  PAGES: XJR.pages, TITLES: {}, CR_SKIP: {},
+  prefix: 'cl321_', appZh: '321教會生活', appEn: '321 Church Life',
+  whereZh: '「我的 → 我的教會 → 我的小家」', whereEn: 'Me → My Church → My Small Group',
+  go: function (r) { open_({ t: r }); },
+  render: function (r) { if (R.page && R.page.t === r) render(); },
+  route: function () { return R.page ? R.page.t : ''; },
+  wrapRender: function (f) { XJR.after = f; },
+  f9: function (zh, en) { var l = L(); if (l === 'en' || l === 'ko') return en || zh; if (l === 'zs') return xjZs(zh); return zh; },
+  esc: esc, note: function (m) { toast(m); }, lang: function () { var l = L(); return l === 'en' || l === 'ko' ? 'en' : (l === 'zs' ? 'zh-Hans' : 'zh-Hant'); },
+  pageHead: function (eb, title, sub) { return '<p class="eyebrow" style="margin:4px 2px 2px">' + esc(eb) + '</p><div class="h2" style="margin:0 2px 2px">' + esc(title) + '</div>' + (sub ? '<p class="sm muted" style="margin:0 2px 10px">' + esc(sub) + '</p>' : ''); },
+  sect: function (n, title) { return '<p class="eyebrow" style="margin:18px 2px 8px">' + esc(title) + '</p>'; },
+  rowlink: function () { return ''; }, simp: function () { },
+  nTr: function (t, b, cb) { if (window.chTr) chTr(t, b, cb); else cb(null); }
+};
+function xjView(t) {
+  var f = XJR.pages[t]; if (!f) return loading('🏡', 1);
+  var ti = t === 'xjchat' ? '' : (t === 'xjcare' ? (L() === 'en' || L() === 'ko' ? 'Care list' : (L() === 'zs' ? '关怀名单' : '關懷名單')) : (L() === 'en' || L() === 'ko' ? 'My Small Group' : '我的小家'));
+  $('#app').innerHTML = topbar(ti, true) + '<div id="view" class="xjv">' + f() + '</div>';
+  if (t === 'xjchat') { var fab = $('#fab'); if (fab) fab.style.display = 'none'; }
+  try { if (XJR.after) XJR.after(t); } catch (e) { }
+}
+function xjEntryHtml() {
+  var X = window.XJ321 && XJ321.state(), G = (window.XJ321 && XJ321.groups()) || [], en = L() === 'en' || L() === 'ko', zs = L() === 'zs';
+  var t1 = en ? 'My Small Group' : '我的小家';
+  var t2 = X ? X.name + (G.length > 1 ? (en ? ' (+' + (G.length - 1) + ' more)' : (zs ? xjZs('等 ' + G.length + ' 個小家') : '等 ' + G.length + ' 個小家')) : '') + (en ? ' · news, chat, prayer' : (zs ? ' · 消息、聊天室、彼此代祷' : ' · 消息、聊天室、彼此代禱'))
+    : (en ? 'Create or join a small group — chat and pray together' : (zs ? '建立或加入小家，一起聊天、彼此代祷' : '建立或加入小家，一起聊天、彼此代禱'));
+  return '<div class="card cccard" onclick="open_({t:\'xj\'})"><div class="row"><div class="ccic">🏡</div><div class="grow"><b>' + esc(t1) + '</b><div class="xs muted">' + esc(t2) + '</div></div><span class="xs muted">›</span></div></div>';
+}
+(function () {
+  var st = document.createElement('style');
+  st.textContent = '.xjv,.xjmodal,.xjrw,.xjview{--navy:var(--brand);--sky:var(--soft);--white:var(--card);--muted:var(--mute);--head:var(--ink);--gold-text:#8A6400;--font-display:var(--serif);--maxw:720px;--paper:var(--bg)}' +
+    '.xjv .btn,.xjmodal .btn{width:100%;background:var(--brand);border-color:var(--brand);color:#fff;border-radius:14px;min-height:48px}.xjv .btn.ghost,.xjmodal .btn.ghost{background:transparent;border:2px solid var(--brand);color:var(--ink)}.xjv .btn.gold{background:linear-gradient(180deg,#F5D47A,#D9A830);border-color:#C9962A;color:#3A2A00}' +
+    '.xjv .note,.xjmodal .note{color:var(--mute);font-size:.86em;margin:6px 2px 0;line-height:1.6}.xjv h3,.xjmodal h3{margin:0 0 8px;font-size:1.05em}' +
+    '.xjv .fld,.xjmodal .fld{display:block;margin:8px 0}.xjv .fld span,.xjmodal .fld span{display:block;font-size:.84em;font-weight:600;margin-bottom:4px}.xjv .fld input,.xjmodal .fld input,.xjmodal .fld textarea,.xjmodal .fld select{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--bg);min-height:46px}' +
+    '.xjchatmode #fab{display:none!important}.xjv .xjft{max-width:720px}';
+  document.head.appendChild(st);
+  var r0 = window.render;
+  if (typeof r0 === 'function') window.render = function () { try { document.body.classList.remove('xjchatmode'); } catch (e) { } return r0.apply(this, arguments); };
+  var sc = document.createElement('script'); sc.src = 'xj.js?v=' + APPVER; document.body.appendChild(sc);
+})();
