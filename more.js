@@ -641,9 +641,9 @@ ccPost({ kind: 'img', data: r.data, mime: r.mime, name: r.name, w: r.w, h: r.h, 
 }
 function caPickFile(inp) {
 var f = inp.files && inp.files[0]; inp.value = ''; if (!f || ccNeedNick()) return;
-if (f.size > 5 * 1048576) return toast(caErr('toobig'));
 var img = /^image\/(jpeg|png|webp|gif)$/i.test(f.type);
-if (img && f.size > 1.5 * 1048576) { caPickPhoto({ files: [f], value: '' }); return; }
+if ((/^image\//i.test(f.type) && !/svg/i.test(f.type) && (f.size > 1.5 * 1048576 || !img)) || /\.(heic|heif)$/i.test(f.name || '')) { caPickPhoto({ files: [f], value: '' }); return; }
+if (f.size > 5 * 1048576) return toast(caErr('toobig'));
 caUp(CA('檔案上傳中…', '文件上传中…', 'Uploading file…', '파일 올리는 중…') + ' ' + caSize(f.size));
 caRead(f, function (d) {
 if (!d) { caUp(''); return; }
