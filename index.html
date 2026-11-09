@@ -40,7 +40,7 @@ body.crOn .top{top:calc(40px + env(safe-area-inset-top));padding-top:10px}
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109';
+var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -212,7 +212,7 @@ var AUPD = (function () {
     if (!on) { if (b && b.parentNode) b.parentNode.removeChild(b); return; }
     if (!b) {
       b = document.createElement('div'); b.id = 'updbar'; b.className = 'updbar';
-      b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;background:#B98A2E;color:#fff;font-weight:700;text-align:center;font-size:15px;cursor:pointer;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px))';
+      b.style.cssText = 'position:fixed;left:0;right:0;top:0;bottom:auto;transform:none;border-radius:0;white-space:normal;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:2147483000;background:#B98A2E;color:#fff;font-weight:700;text-align:center;font-size:15px;cursor:pointer;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px))';
       b.onclick = function () { apply(ssGet('auTry') === U.target); };
       document.body.appendChild(b);
     }
