@@ -118,7 +118,7 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat' });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 3, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
     if (code.length < 4) return bad('nochurch', 404);
