@@ -404,6 +404,14 @@ if (j && j.ok) cb(j, ''); else cb(null, j && j.err ? j.err : (st > 0 ? 'http' + 
 });
 }
 function ccSeen() { return (S.ch && S.ch.chatSeen) || 0; }
+/* 別人收回（或無痕收回）了已經看到的訊息：跟著改（church-chat v7 的 dels） */
+function ccDels(L) {
+var ch = 0; if (!L || !L.length) return 0;
+eachA(L, function (x) { var id = x[0], m = ccFind(id); if (!m) return;
+if (x[1] === 2) { CC.msgs = CC.msgs.filter(function (y) { return y.id !== id; }); ch = 1; }
+else if (!m.del) { m.del = 1; m.text = ''; delete m.kind; delete m.att; delete m.meta; ch = 1; } });
+return ch;
+}
 function ccMerge(list) {
 var have = {}, i;
 for (i = 0; i < CC.msgs.length; i++) have[CC.msgs[i].id] = i;
@@ -451,7 +459,7 @@ st.textContent = '.cccard{cursor:pointer}.ccic{width:42px;height:42px;border-rad
 '.cafile{display:flex!important;align-items:center;gap:10px;text-decoration:none;color:inherit;flex-wrap:wrap}.cafile .fi{font-size:1.7em}.cafile .fn{display:flex;flex-direction:column;min-width:0}.cafile .fn b{word-break:break-all}.cafile small{opacity:.75;font-size:.78em}' +
 '.cavoice audio{display:block;width:230px;max-width:100%;height:40px}.cavoice small{display:block;font-size:.74em;opacity:.8;margin-top:2px}.ccm.mine .cavoice{background:var(--card);color:var(--ink);border-color:var(--line)}' +
 '.camore{border:0;background:none;color:var(--mute);font-size:1.2em;line-height:1;padding:0 4px;cursor:pointer;display:block;margin:0 auto 2px}' +
-'.caview{position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}.caview img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}.caview .bar{display:flex;gap:10px;margin-top:14px}';
+'.caview{position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}.caview img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}.caview .bar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}';
 document.head.appendChild(st);
 }
 var CCCOL = ['#1F3C88', '#5E8A35', '#A8572E', '#6C4BA3', '#2E7D8C', '#B8473E', '#8A6510', '#3A74B0'];
@@ -477,6 +485,7 @@ h += '<div class="ccm' + (m.mine ? ' mine' : '') + '" id="ccm' + m.id + '">' +
 (m.kind ? caHtml(m, q) : '<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>')) +
 (sel && !m.del ? '<div class="ccacts"><button onclick="ccReply(' + m.id + ')">↩ ' + esc(CCs('reply')) + '</button><button onclick="ccCopy(' + m.id + ')">' + esc(CCs('copy')) + '</button>' +
 (!m.mine && m.who && window.XJ321 ? '<button onclick="ccDm(\'' + esc(m.who) + '\',' + m.id + ')">✉️ ' + esc(CA('私訊', '私信', 'Message', '개인 메시지')) + '</button>' : '') +
+(m.mine ? '<button onclick="ccDel(' + m.id + ',0,1)">' + esc(CC.arm === m.id + 'h' ? CA('再按一次無痕收回', '再按一次无痕收回', 'Tap again to unsend without a trace', '한 번 더 누르면 흔적 없이 취소돼요') : '🫥 ' + CA('無痕收回', '无痕收回', 'Unsend, no trace', '흔적 없이 취소')) + '</button>' : '') +
 ((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(m.mine ? (CC.arm === m.id ? CA('再按一次收回', '再按一次收回', 'Tap again to unsend', '한 번 더 누르면 취소돼요') : '↩️ ' + CA('收回', '收回', 'Unsend', '보내기 취소')) : (CC.arm === m.id ? CCs('armDel') : CCs('del'))) + '</button>' : '') + '</div>' : '') +
 '</div><div class="cctime">' + (m.kind && !m.del ? '<button class="camore" onclick="ccTap(' + m.id + ')" aria-label="more">⋯</button>' : '') + ccTime(m.ts) + '</div></div>';
 });
@@ -530,8 +539,8 @@ CC.busy = 0;
 if (!j) { CC.err = e; if (!CC.msgs.length || full) ccPaint(); if (full) toast(ccErr(e)); return; }
 CC.err = '';
 if (full) { CC.msgs = []; CC.last = 0; }
-var before = CC.last; ccMerge(j.msgs);
-if (full || CC.last !== before) ccPaint(full);
+var before = CC.last; ccMerge(j.msgs); var dch = ccDels(j.dels);
+if (full || CC.last !== before || dch) ccPaint(full);
 });
 }
 /* 私訊（church-chat v6）：借用小家聊天室的介面，代碼是教會代碼，只有兩個人看得到 */
@@ -544,11 +553,13 @@ var m = ccFind(id); if (!m) return;
 try { navigator.clipboard.writeText(m.text).then(function () { toast(CCs('copied')); }, function () { toast(m.text); }); } catch (e) { toast(m.text); }
 CC.sel = 0; ccPaint();
 }
-function ccDel(id, now2) {
-if (!now2 && CC.arm !== id) { CC.arm = id; ccPaint(); return; }
+function ccDel(id, now2, hide) {
+var key = hide ? id + 'h' : id;
+if (!now2 && CC.arm !== key) { CC.arm = key; ccPaint(); return; }
 CC.arm = 0;
-ccApi('POST', '/c/' + S.ch.code + '/del', { id: id, dev: S.ch.dev, pin: S.ch.pin || '' }, function (j, e) {
+ccApi('POST', '/c/' + S.ch.code + '/del', { id: id, dev: S.ch.dev, pin: S.ch.pin || '', hide: hide ? 1 : 0 }, function (j, e) {
 if (!j) return toast(ccErr(e));
+if (hide) { CC.msgs = CC.msgs.filter(function (x) { return x.id !== id; }); var vh = $('#caView'); if (vh && vh.parentNode) vh.parentNode.removeChild(vh); CC.sel = 0; ccPaint(); return toast(CA('已無痕收回，聊天室裡不留任何痕跡', '已无痕收回，聊天室里不留任何痕迹', 'Unsent without a trace', '흔적 없이 취소했어요')); }
 var m = ccFind(id), mine = m && m.mine; if (m) { m.del = 1; m.text = ''; }
 var vw = $('#caView'); if (vw && vw.parentNode) vw.parentNode.removeChild(vw);
 CC.sel = 0; ccPaint(); toast(mine ? CA('已收回，大家都看不到了', '已收回，大家都看不到了', 'Unsent — no one can see it now', '보내기를 취소했어요') : CT('deleted'));
@@ -612,12 +623,14 @@ return '<div class="cct">' + chLink(m.text) + '</div>';
 function caViewDel(att) {
 var mm = null; eachA(CC.msgs, function (m) { if (String(m.att) === String(att) && !m.del) mm = m; });
 if (!mm || !(mm.mine || (S.ch && S.ch.pin))) return '';
-return '<button class="btn sm" data-mine="' + (mm.mine ? 1 : 0) + '" onclick="caViewDelTap(this,' + mm.id + ')">' + esc(mm.mine ? '↩️ ' + CA('收回', '收回', 'Unsend', '보내기 취소') : CCs('del')) + '</button>';
+return '<button class="btn sm" data-mine="' + (mm.mine ? 1 : 0) + '" onclick="caViewDelTap(this,' + mm.id + ')">' + esc(mm.mine ? '↩️ ' + CA('收回', '收回', 'Unsend', '보내기 취소') : CCs('del')) + '</button>' +
+(mm.mine ? '<button class="btn sm" data-mine="1" data-hide="1" onclick="caViewDelTap(this,' + mm.id + ')">🫥 ' + esc(CA('無痕收回', '无痕收回', 'Unsend, no trace', '흔적 없이 취소')) + '</button>' : '');
 }
 function caViewDelTap(b, id) {
-if (b.getAttribute('data-arm')) { ccDel(id, 1); return; }
+var hd = b.getAttribute('data-hide') === '1';
+if (b.getAttribute('data-arm')) { ccDel(id, 1, hd); return; }
 b.setAttribute('data-arm', '1'); b.style.background = '#C8463C'; b.style.color = '#fff';
-b.textContent = b.getAttribute('data-mine') === '1' ? CA('再按一次收回', '再按一次收回', 'Tap again to unsend', '한 번 더 누르면 취소돼요') : CCs('armDel');
+b.textContent = hd ? CA('再按一次無痕收回', '再按一次无痕收回', 'Tap again to unsend without a trace', '한 번 더 누르면 흔적 없이 취소돼요') : b.getAttribute('data-mine') === '1' ? CA('再按一次收回', '再按一次收回', 'Tap again to unsend', '한 번 더 누르면 취소돼요') : CCs('armDel');
 }
 function caView(id) {
 var old = $('#caView'); if (old) old.parentNode.removeChild(old);
@@ -933,7 +946,7 @@ try { tdCss(); } catch (e) { }
 /* ── 我的小家（xj1109，2026-11-09）：在「我的教會」裡建立／加入小家，小家聊天室、今天完成、關懷名單、消息 ──
    共用空中團契的 xj.js（同一份檔案），這裡只提供宿主掛鉤；存檔前綴 cl321_，和空中團契的小家分開。
    後端沿用 church-news（小家本身）與 church-chat（聊天、附件、今天完成、關懷）。 */
-var XJ_T2S = {"並": "并", "亞": "亚", "佈": "布", "來": "来", "係": "系", "個": "个", "們": "们", "傳": "传", "儲": "储", "兒": "儿", "內": "内", "兩": "两", "別": "别", "刪": "删", "則": "则", "剛": "刚", "動": "动", "務": "务", "勵": "励", "參": "参", "啟": "启", "單": "单", "嗎": "吗", "國": "国", "圖": "图", "團": "团", "堅": "坚", "姊": "姐", "實": "实", "寫": "写", "將": "将", "對": "对", "導": "导", "屬": "属", "幾": "几", "張": "张", "後": "后", "從": "从", "愛": "爱", "懷": "怀", "掛": "挂", "換": "换", "擊": "击", "數": "数", "時": "时", "書": "书", "會": "会", "樂": "乐", "標": "标", "樣": "样", "機": "机", "檔": "档", "權": "权", "歡": "欢", "沒": "没", "瀏": "浏", "為": "为", "燈": "灯", "獎": "奖", "獻": "献", "現": "现", "畫": "画", "當": "当", "發": "发", "確": "确", "碼": "码", "禱": "祷", "種": "种", "稱": "称", "穌": "稣", "筆": "笔", "節": "节", "紀": "纪", "約": "约", "細": "细", "組": "组", "結": "结", "絡": "络", "給": "给", "經": "经", "網": "网", "綴": "缀", "線": "线", "繼": "继", "續": "续", "聖": "圣", "聯": "联", "聲": "声", "腳": "脚", "與": "与", "舊": "旧", "華": "华", "著": "着", "處": "处", "補": "补", "裝": "装", "裡": "里", "製": "制", "複": "复", "親": "亲", "覽": "览", "訊": "讯", "託": "托", "記": "记", "設": "设", "許": "许", "詞": "词", "試": "试", "詩": "诗", "話": "话", "認": "认", "語": "语", "誠": "诚", "說": "说", "課": "课", "請": "请", "謝": "谢", "譯": "译", "讀": "读", "讓": "让", "讚": "赞", "貼": "贴", "資": "资", "載": "载", "輸": "输", "這": "这", "連": "连", "進": "进", "過": "过", "選": "选", "還": "还", "鉤": "钩", "錄": "录", "錯": "错", "鐘": "钟", "長": "长", "閉": "闭", "開": "开", "間": "间", "關": "关", "隊": "队", "隨": "随", "隱": "隐", "離": "离", "靈": "灵", "頁": "页", "頂": "顶", "頭": "头", "題": "题", "願": "愿", "類": "类", "顧": "顾", "顯": "显", "風": "风", "馬": "马", "麥": "麦", "麼": "么", "點": "点"};
+var XJ_T2S = {"並": "并", "亞": "亚", "佈": "布", "來": "来", "係": "系", "個": "个", "們": "们", "傳": "传", "儲": "储", "兒": "儿", "內": "内", "兩": "两", "別": "别", "刪": "删", "則": "则", "剛": "刚", "動": "动", "務": "务", "勵": "励", "參": "参", "啟": "启", "單": "单", "嗎": "吗", "國": "国", "圖": "图", "團": "团", "堅": "坚", "姊": "姐", "實": "实", "寫": "写", "將": "将", "對": "对", "導": "导", "屬": "属", "幾": "几", "張": "张", "後": "后", "從": "从", "愛": "爱", "懷": "怀", "掛": "挂", "換": "换", "擊": "击", "數": "数", "時": "时", "書": "书", "會": "会", "樂": "乐", "標": "标", "樣": "样", "機": "机", "檔": "档", "權": "权", "歡": "欢", "沒": "没", "瀏": "浏", "為": "为", "無": "无", "燈": "灯", "獎": "奖", "獻": "献", "現": "现", "畫": "画", "當": "当", "發": "发", "確": "确", "碼": "码", "禱": "祷", "種": "种", "稱": "称", "穌": "稣", "筆": "笔", "節": "节", "紀": "纪", "約": "约", "細": "细", "組": "组", "結": "结", "絡": "络", "給": "给", "經": "经", "網": "网", "綴": "缀", "線": "线", "繼": "继", "續": "续", "聖": "圣", "聯": "联", "聲": "声", "腳": "脚", "與": "与", "舊": "旧", "華": "华", "著": "着", "處": "处", "補": "补", "裝": "装", "裡": "里", "製": "制", "複": "复", "親": "亲", "覽": "览", "訊": "讯", "託": "托", "記": "记", "設": "设", "許": "许", "詞": "词", "試": "试", "詩": "诗", "話": "话", "認": "认", "語": "语", "誠": "诚", "說": "说", "課": "课", "請": "请", "謝": "谢", "譯": "译", "讀": "读", "讓": "让", "讚": "赞", "貼": "贴", "資": "资", "跡": "迹", "載": "载", "輸": "输", "這": "这", "連": "连", "進": "进", "過": "过", "選": "选", "還": "还", "鉤": "钩", "錄": "录", "錯": "错", "鐘": "钟", "長": "长", "閉": "闭", "開": "开", "間": "间", "關": "关", "隊": "队", "隨": "随", "隱": "隐", "離": "离", "靈": "灵", "頁": "页", "頂": "顶", "頭": "头", "題": "题", "願": "愿", "類": "类", "顧": "顾", "顯": "显", "風": "风", "馬": "马", "麥": "麦", "麼": "么", "點": "点"};
 function xjZs(t) { var o = ''; t = String(t == null ? '' : t); for (var i = 0; i < t.length; i++) { var c = t.charAt(i); o += XJ_T2S[c] || c; } return o; }
 var XJR = { pages: {}, after: null };
 window.X321 = window.X321 || {};

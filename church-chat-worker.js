@@ -30,6 +30,8 @@
         ② 小家可以登記「從這個小家長出來的 235 團隊」：POST /c/小家代碼/link、GET /c/小家代碼/links。
         ③ 關懷名單多記每個人有沒有 2（屬靈同伴）、3（屬靈父母兒女）、5（五重團隊）的關係（t2／t3／t5，只是數量）。
         一樣只要重新貼上、Deploy，不必新增任何綁定。
+   v7（2026-11-09）：收回與無痕收回。/del 帶 hide:1（只限自己的訊息）＝無痕收回（del=2，清單裡完全不出現）；
+        /msgs 多回 dels：[[id, 1或2], …]，讓已經載入的手機也跟著收回。
    v6（2026-11-09）：私訊。同一個小家／教會／團隊裡的兩個人可以一對一聊天（也能傳相片、檔案、語音、貼圖）。
         私訊房間＝DM:群組代碼:兩人代號（裝置代號的雜湊，排序後相連）；只有這兩支手機讀得到，
         連附件也要帶自己的裝置代號才拿得到。GET /c/代碼/dms 列出我的私訊；/msgs、/send、/del 加 with=對方代號 就是私訊。
@@ -137,6 +139,7 @@ async function list(db, code, after, dev) {
   else rs = await db.prepare('SELECT * FROM (SELECT id,ts,dev,nick,text,re,del,kind,att,meta FROM msg WHERE code=? ORDER BY id DESC LIMIT 80) ORDER BY id').bind(code).all();
   const out = [];
   for (const m of rs.results || []) {
+    if (m.del === 2) continue;   /* 無痕收回：連「已收回」都不留 */
     const o = { id: m.id, ts: m.ts, nick: m.nick, text: m.del ? '' : m.text, re: m.re || 0, del: m.del ? 1 : 0, mine: m.dev === dev ? 1 : 0, who: await tag(m.dev) };
     if (m.kind && !m.del) { o.kind = m.kind; if (m.att) o.att = m.att; try { o.meta = JSON.parse(m.meta || '{}'); } catch (e) { o.meta = {}; } }
     out.push(o);
@@ -190,7 +193,7 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat', v: 6, att: true, team: true, dm: true, news: !!(env.NEWS && env.NEWS.fetch) });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 7, att: true, team: true, dm: true, unsend: true, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
     if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0, clean(url.searchParams.get('dev'), 64));
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
@@ -203,7 +206,10 @@ export default {
       const room = await roomOf(code, clean(url.searchParams.get('with'), 8), dev);
       if (!room) return bad('with');
       const msgs = await list(db, room, after, dev);
-      return J({ ok: true, msgs, now: Date.now() });
+      /* 收回同步：已經看到的訊息被收回時，讓手機也跟著改（[id, 1＝留下「已收回」, 2＝無痕]） */
+      let dels = [];
+      if (after > 0) { const rd = await db.prepare('SELECT id,del FROM msg WHERE code=? AND del>0 AND id>? AND id<=? ORDER BY id DESC LIMIT 100').bind(room, Math.max(0, after - 300), after).all(); dels = (rd.results || []).map(x => [x.id, x.del === 2 ? 2 : 1]); }
+      return J({ ok: true, msgs, dels, now: Date.now() });
     }
     if (req.method === 'GET' && act === 'dms') {
       const dev = clean(url.searchParams.get('dev'), 64);
@@ -292,7 +298,7 @@ export default {
       const m = await db.prepare('SELECT dev,att FROM msg WHERE id=? AND code=?').bind(id, room).first();
       if (!m) return bad('gone', 404);
       if (m.dev !== dev && (room !== code || !(await leaderOk(code, b.pin)))) return bad('forbid', 403);
-      await db.prepare('UPDATE msg SET del=1, text=\'\', meta=NULL WHERE id=?').bind(id).run();
+      await db.prepare('UPDATE msg SET del=?, text=\'\', meta=NULL WHERE id=?').bind(b.hide && m.dev === dev ? 2 : 1, id).run();
       if (m.att) { await db.prepare('DELETE FROM attc WHERE att=?').bind(m.att).run(); await db.prepare('DELETE FROM att WHERE id=?').bind(m.att).run(); }
       return J({ ok: true });
     }
