@@ -21,12 +21,22 @@
         關掉分享就整筆刪除。不收筆記、畫線、禱告內容。
    v3（2026-11-09）：今日完成名單——完成當天靈修的弟兄姊妹，名字顯示在教會頁一起歡喜
         （選擇不顯示名字的人只算人數）；回傳「你是今天第幾位」給獎勵動畫用。保留 30 天。
+   v4（2026-11-09）：聊天室可以傳相片、檔案、貼圖、語音錄音。相片在手機上先縮小成 JPEG；檔案上限 5MB，
+        分段存在 D1（attc 資料表，不需要另外開通 R2／KV）；GET /c/代碼/att/編號 取檔。
+        貼圖是 App 內建圖案，只存代號。舊版 App 會看到「📷 相片」「📎 檔名」「[貼圖] 阿們」的文字。
+        只要把本檔重新貼上、Deploy，資料表會自動升級。
    ===================================================================== */
 
 const NEWS = 'https://church-news.spch321.workers.dev';
 const KEEP_DAYS = 120;          // 訊息保留天數
 const MAX_TEXT = 600;           // 每則字數上限
 const DAY_CAP = 3000;           // 每個教會每天訊息上限（防灌水）
+const MAX_FILE = 5 * 1024 * 1024;  // 相片／檔案上限（原始大小）
+const ATT_DAY_CAP = 300;        // 每個教會每天相片＋檔案上限
+const CHUNK = 900000;           // 每段 base64 字元數（D1 每列上限約 2MB）
+const IMG_MIME = /^image\/(jpeg|png|gif|webp)$/;
+const AUD_MIME = /^audio\/(mp4|webm|ogg|mpeg|aac|x-m4a|wav)$/;
+const STK = /^[a-z0-9_-]{1,24}$/;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -52,8 +62,16 @@ async function init(db) {
       pw INTEGER, pd INTEGER, pn INTEGER, upd INTEGER, PRIMARY KEY (code, dev))`),
     db.prepare(`CREATE TABLE IF NOT EXISTS done (
       code TEXT NOT NULL, day TEXT NOT NULL, dev TEXT NOT NULL, nick TEXT, ts INTEGER,
-      PRIMARY KEY (code, day, dev))`)
+      PRIMARY KEY (code, day, dev))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS att (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, ts INTEGER NOT NULL,
+      mime TEXT, name TEXT, size INTEGER, parts INTEGER)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS attc (att INTEGER NOT NULL, n INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (att, n))`)
   ]);
+  /* v4：舊的 msg 表補上 kind／att／meta 欄位（已經有就略過） */
+  for (const col of ['kind TEXT', 'att INTEGER', 'meta TEXT']) {
+    try { await db.prepare('ALTER TABLE msg ADD COLUMN ' + col).run(); } catch (e) { }
+  }
   ready = true;
 }
 
@@ -101,13 +119,40 @@ async function todayList(db, code, day) {
 }
 async function list(db, code, after, dev) {
   let rs;
-  if (after > 0) rs = await db.prepare('SELECT id,ts,dev,nick,text,re,del FROM msg WHERE code=? AND id>? ORDER BY id LIMIT 200').bind(code, after).all();
-  else rs = await db.prepare('SELECT * FROM (SELECT id,ts,dev,nick,text,re,del FROM msg WHERE code=? ORDER BY id DESC LIMIT 80) ORDER BY id').bind(code).all();
+  if (after > 0) rs = await db.prepare('SELECT id,ts,dev,nick,text,re,del,kind,att,meta FROM msg WHERE code=? AND id>? ORDER BY id LIMIT 200').bind(code, after).all();
+  else rs = await db.prepare('SELECT * FROM (SELECT id,ts,dev,nick,text,re,del,kind,att,meta FROM msg WHERE code=? ORDER BY id DESC LIMIT 80) ORDER BY id').bind(code).all();
   const out = [];
   for (const m of rs.results || []) {
-    out.push({ id: m.id, ts: m.ts, nick: m.nick, text: m.del ? '' : m.text, re: m.re || 0, del: m.del ? 1 : 0, mine: m.dev === dev ? 1 : 0, who: await tag(m.dev) });
+    const o = { id: m.id, ts: m.ts, nick: m.nick, text: m.del ? '' : m.text, re: m.re || 0, del: m.del ? 1 : 0, mine: m.dev === dev ? 1 : 0, who: await tag(m.dev) };
+    if (m.kind && !m.del) { o.kind = m.kind; if (m.att) o.att = m.att; try { o.meta = JSON.parse(m.meta || '{}'); } catch (e) { o.meta = {}; } }
+    out.push(o);
   }
   return out;
+}
+
+/* 取相片／檔案：相片直接顯示；其他檔案一律當下載（不在本網域開網頁，避免夾帶程式） */
+async function getAtt(db, code, id) {
+  if (!id) return bad('id', 404);
+  const a = await db.prepare('SELECT id,code,mime,name,size,parts FROM att WHERE id=?').bind(id).first();
+  if (!a || a.code !== code.replace(/[^A-Z0-9]/g, '')) return bad('gone', 404);
+  let b64 = '';
+  for (let i = 0; i < (a.parts || 1); i++) {
+    const c = await db.prepare('SELECT data FROM attc WHERE att=? AND n=?').bind(id, i).first();
+    if (!c) return bad('gone', 404);
+    b64 += c.data;
+  }
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const img = IMG_MIME.test(a.mime || '') || AUD_MIME.test(a.mime || '');
+  const fn = encodeURIComponent(a.name || 'file');
+  return new Response(u8, { headers: {
+    ...CORS,
+    'Content-Type': img ? a.mime : (a.mime === 'application/pdf' ? 'application/pdf' : 'application/octet-stream'),
+    'Content-Disposition': (img ? 'inline' : 'attachment') + "; filename*=UTF-8''" + fn,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; sandbox"
+  } });
 }
 
 export default {
@@ -118,8 +163,9 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat', v: 3, news: !!(env.NEWS && env.NEWS.fetch) });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 4, att: true, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
+    if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0);
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
     if (code.length < 4) return bad('nochurch', 404);
     const act = p[2] || 'msgs';
@@ -140,7 +186,26 @@ export default {
     if (dev.length < 6) return bad('dev');
 
     if (act === 'send') {
-      const text = clean(b.text, MAX_TEXT), nick = clean(b.nick, 20) || '弟兄姊妹';
+      let text = clean(b.text, MAX_TEXT);
+      const nick = clean(b.nick, 20) || '弟兄姊妹';
+      const kind = ['img', 'file', 'stk', 'voice'].indexOf(b.kind) >= 0 ? b.kind : '';
+      let meta = null, attData = null;
+      if (kind === 'stk') {
+        const k = clean(b.stk, 24); if (!STK.test(k)) return bad('stk');
+        meta = { stk: k }; if (!text) text = '[貼圖]';
+      } else if (kind) {
+        attData = String(b.data || '').replace(/^data:[^,]*,/, '').replace(/\s+/g, '');
+        if (!attData || !/^[A-Za-z0-9+/=]+$/.test(attData)) return bad('nodata');
+        const size = Math.floor(attData.length * 3 / 4);
+        if (size > MAX_FILE) return bad('toobig', 413);
+        let mime = clean(b.mime, 100).toLowerCase().split(';')[0].trim() || 'application/octet-stream';
+        if (kind === 'img' && !IMG_MIME.test(mime)) return bad('mime');
+        if (kind === 'voice' && !AUD_MIME.test(mime)) return bad('mime');
+        const name = clean(b.name, 120) || (kind === 'img' ? 'photo.jpg' : kind === 'voice' ? 'voice' : 'file');
+        meta = { name, size, mime, w: Math.min(20000, parseInt(b.w, 10) || 0), h: Math.min(20000, parseInt(b.h, 10) || 0) };
+        if (kind === 'voice') meta.dur = Math.max(0, Math.min(600, Math.round(+b.dur || 0)));
+        if (!text) text = kind === 'img' ? '📷 相片' : kind === 'voice' ? '🎤 語音' + (meta.dur ? ' ' + meta.dur + '″' : '') : '📎 ' + name;
+      }
       if (!text) return bad('empty');
       if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
       const now = Date.now();
@@ -149,17 +214,33 @@ export default {
       const cnt = await db.prepare('SELECT COUNT(*) AS n FROM msg WHERE code=? AND ts>?').bind(code, now - 864e5).first();
       if (cnt && cnt.n >= DAY_CAP) return bad('full', 429);
       const re = parseInt(b.re, 10) || null;
-      await db.prepare('INSERT INTO msg(code,ts,dev,nick,text,re) VALUES(?,?,?,?,?,?)').bind(code, now, dev, nick, text, re).run();
-      if (Math.random() < 0.02) await db.prepare('DELETE FROM msg WHERE ts<?').bind(now - KEEP_DAYS * 864e5).run();
+      let attId = null;
+      if (attData) {
+        const ac = await db.prepare('SELECT COUNT(*) AS n FROM att WHERE code=? AND ts>?').bind(code, now - 864e5).first();
+        if (ac && ac.n >= ATT_DAY_CAP) return bad('attfull', 429);
+        const parts = Math.ceil(attData.length / CHUNK);
+        const r = await db.prepare('INSERT INTO att(code,ts,mime,name,size,parts) VALUES(?,?,?,?,?,?)').bind(code, now, meta.mime, meta.name, meta.size, parts).run();
+        attId = r.meta && r.meta.last_row_id ? r.meta.last_row_id : (r.lastInsertRowid != null ? Number(r.lastInsertRowid) : null);
+        if (!attId) { const q = await db.prepare('SELECT id FROM att WHERE code=? AND ts=? ORDER BY id DESC LIMIT 1').bind(code, now).first(); attId = q && q.id; }
+        for (let i = 0; i < parts; i++) await db.prepare('INSERT INTO attc(att,n,data) VALUES(?,?,?)').bind(attId, i, attData.slice(i * CHUNK, (i + 1) * CHUNK)).run();
+      }
+      await db.prepare('INSERT INTO msg(code,ts,dev,nick,text,re,kind,att,meta) VALUES(?,?,?,?,?,?,?,?,?)').bind(code, now, dev, nick, text, re, kind || null, attId, meta ? JSON.stringify(meta) : null).run();
+      if (Math.random() < 0.02) {
+        const old = now - KEEP_DAYS * 864e5;
+        await db.prepare('DELETE FROM msg WHERE ts<?').bind(old).run();
+        await db.prepare('DELETE FROM attc WHERE att IN (SELECT id FROM att WHERE ts<?)').bind(old).run();
+        await db.prepare('DELETE FROM att WHERE ts<?').bind(old).run();
+      }
       const after = parseInt(b.after, 10) || 0;
       return J({ ok: true, msgs: await list(db, code, after, dev), now });
     }
     if (act === 'del') {
       const id = parseInt(b.id, 10); if (!id) return bad('id');
-      const m = await db.prepare('SELECT dev FROM msg WHERE id=? AND code=?').bind(id, code).first();
+      const m = await db.prepare('SELECT dev,att FROM msg WHERE id=? AND code=?').bind(id, code).first();
       if (!m) return bad('gone', 404);
       if (m.dev !== dev && !(await leaderOk(code, b.pin))) return bad('forbid', 403);
-      await db.prepare('UPDATE msg SET del=1, text=\'\' WHERE id=?').bind(id).run();
+      await db.prepare('UPDATE msg SET del=1, text=\'\', meta=NULL WHERE id=?').bind(id).run();
+      if (m.att) { await db.prepare('DELETE FROM attc WHERE att=?').bind(m.att).run(); await db.prepare('DELETE FROM att WHERE id=?').bind(m.att).run(); }
       return J({ ok: true });
     }
     if (act === 'done') {

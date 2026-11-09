@@ -438,7 +438,17 @@ st.textContent = '.cccard{cursor:pointer}.ccic{width:42px;height:42px;border-rad
 '.ccft textarea{min-height:44px;max-height:120px;height:44px;resize:none;padding:10px 12px;line-height:1.5}.ccft .row{align-items:flex-end;gap:8px}.ccft .btn{min-height:44px;flex:none}' +
 '.ccre{display:flex;align-items:center;gap:8px;font-size:.8em;color:var(--brand);margin-bottom:6px}.ccre span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ccre button{border:0;background:none;color:var(--mute);cursor:pointer}' +
 '.cctip{font-size:.74em;color:var(--mute);background:var(--soft);border-radius:12px;padding:8px 12px;margin:8px 0;line-height:1.6}' +
-'#gxaroot{background:transparent!important;padding-bottom:0!important}';
+'#gxaroot{background:transparent!important;padding-bottom:0!important}' +
+'.catool{flex:none;width:38px;min-height:44px;border:0;background:none;font-size:1.3em;cursor:pointer;padding:0;border-radius:10px}.ccft .row{gap:2px}.ccft textarea{margin-left:4px}' +
+'.caup{font-size:.82em;color:var(--brand);background:var(--soft);border-radius:10px;padding:6px 10px;margin-bottom:6px}' +
+'.carec{align-items:center;gap:8px;background:#FDECEC;border-radius:12px;padding:8px 10px;margin-bottom:6px;color:#9B2C2C}.carec .dot{flex:none;width:10px;height:10px;border-radius:50%;background:#D23B3B;animation:caBlink 1s infinite}.carec .btn.sm{min-height:0;padding:6px 12px}@keyframes caBlink{50%{opacity:.25}}' +
+'.castkp{grid-template-columns:repeat(4,1fr);gap:8px;max-height:min(44vh,330px);overflow:auto;padding:4px 0 8px}.castkp button{border:0;background:none;padding:0;cursor:pointer}.castkp .castk{width:100%;height:auto;aspect-ratio:1}.castkp .castk .e{font-size:1.8em}.castkp .castk b{font-size:.72em}' +
+'.castk{width:124px;height:124px;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 3px 10px rgba(0,0,0,.12);text-align:center;padding:6px}.castk .e{font-size:2.6em;line-height:1}.castk b{font-size:.92em;line-height:1.25}' +
+'.caimg{display:block;max-width:min(240px,100%);max-height:320px;border-radius:14px;border:1px solid var(--line);cursor:zoom-in;background:var(--soft);object-fit:cover}' +
+'.cafile{display:flex!important;align-items:center;gap:10px;text-decoration:none;color:inherit;flex-wrap:wrap}.cafile .fi{font-size:1.7em}.cafile .fn{display:flex;flex-direction:column;min-width:0}.cafile .fn b{word-break:break-all}.cafile small{opacity:.75;font-size:.78em}' +
+'.cavoice audio{display:block;width:230px;max-width:100%;height:40px}.cavoice small{display:block;font-size:.74em;opacity:.8;margin-top:2px}.ccm.mine .cavoice{background:var(--card);color:var(--ink);border-color:var(--line)}' +
+'.camore{border:0;background:none;color:var(--mute);font-size:1.2em;line-height:1;padding:0 4px;cursor:pointer;display:block;margin:0 auto 2px}' +
+'.caview{position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}.caview img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px}.caview .bar{display:flex;gap:10px;margin-top:14px}';
 document.head.appendChild(st);
 }
 var CCCOL = ['#1F3C88', '#5E8A35', '#A8572E', '#6C4BA3', '#2E7D8C', '#B8473E', '#8A6510', '#3A74B0'];
@@ -461,10 +471,10 @@ h += '<div class="ccm' + (m.mine ? ' mine' : '') + '" id="ccm' + m.id + '">' +
 (m.mine ? '' : '<div class="ccav" style="background:' + ccCol(m.who) + '">' + esc(String(m.nick || '?').slice(0, 1)) + '</div>') +
 '<div class="ccb">' + (m.mine ? '' : '<div class="ccn">' + esc(m.nick) + '</div>') +
 (m.del ? '<div class="cct gone">' + esc(CCs('deleted')) + '</div>' :
-'<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>') +
+(m.kind ? caHtml(m, q) : '<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>')) +
 (sel && !m.del ? '<div class="ccacts"><button onclick="ccReply(' + m.id + ')">↩ ' + esc(CCs('reply')) + '</button><button onclick="ccCopy(' + m.id + ')">' + esc(CCs('copy')) + '</button>' +
 ((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(CC.arm === m.id ? CCs('armDel') : CCs('del')) + '</button>' : '') + '</div>' : '') +
-'</div><div class="cctime">' + ccTime(m.ts) + '</div></div>';
+'</div><div class="cctime">' + (m.kind && !m.del ? '<button class="camore" onclick="ccTap(' + m.id + ')" aria-label="more">⋯</button>' : '') + ccTime(m.ts) + '</div></div>';
 });
 return h;
 }
@@ -490,7 +500,10 @@ var q = CC.re ? ccFind(CC.re) : null;
 h += '<div class="ccft" id="ccFt"><div class="in">' +
 (trim(S.name) ? '' : '<input type="text" id="ccNick" maxlength="20" placeholder="' + esc(CCs('nickPh')) + '" style="margin-bottom:6px;min-height:40px">') +
 (q ? '<div class="ccre"><span>↩ ' + esc(CCs('replyTo', q.mine ? CCs('me') : q.nick)) + '：' + esc(q.text) + '</span><button onclick="CC.re=0;vChChat()">✕ ' + esc(CCs('cancel')) + '</button></div>' : '') +
-'<div class="row"><textarea id="ccIn" maxlength="600" placeholder="' + esc(CCs('ph')) + '" oninput="ccGrow(this)"></textarea><button class="btn pri" id="ccSend" onclick="ccSend()">' + esc(CCs('send')) + '</button></div></div></div>';
+caPanel() + '<div class="caup" id="caUp" style="display:none"></div>' +
+'<div class="carec" id="caRec" style="display:none"><span class="dot"></span><b>' + esc(CA('錄音中', '录音中', 'Recording', '녹음 중')) + '</b><span id="caRecT">0:00</span><span class="grow"></span><button class="btn sm" onclick="caRecStop(1)">' + esc(CCs('cancel')) + '</button><button class="btn pri sm" onclick="caRecStop(0)">' + esc(CCs('send')) + '</button></div>' +
+'<input type="file" id="caPhoto" accept="image/*" style="display:none" onchange="caPickPhoto(this)"><input type="file" id="caFile" style="display:none" onchange="caPickFile(this)">' +
+'<div class="row"><button class="catool" onclick="$(\'#caPhoto\').click()" aria-label="photo">🖼️</button><button class="catool" onclick="$(\'#caFile\').click()" aria-label="file">📎</button><button class="catool" onclick="caRecStart()" aria-label="voice">🎤</button><button class="catool" onclick="caStkToggle()" aria-label="sticker">😊</button><textarea id="ccIn" maxlength="600" placeholder="' + esc(CCs('ph')) + '" oninput="ccGrow(this)"></textarea><button class="btn pri" id="ccSend" onclick="ccSend()">' + esc(CCs('send')) + '</button></div></div></div>';
 var draft = $('#ccIn') ? $('#ccIn').value : (CC.draft || '');
 setApp(h);
 var fab = $('#fab'); if (fab) fab.style.display = 'none';
@@ -499,7 +512,7 @@ ccFit(); ccPaint(true);
 ccPull(CC.msgs.length ? 0 : 1);
 clearInterval(CC.timer);
 CC.timer = setInterval(function () {
-if (!(R.page && R.page.t === 'chchat')) { clearInterval(CC.timer); CC.timer = 0; var f = $('#fab'); if (f) f.style.display = ''; return; }
+if (!(R.page && R.page.t === 'chchat')) { clearInterval(CC.timer); CC.timer = 0; var f = $('#fab'); if (f) f.style.display = ''; if (CR3.rec) caRecStop(1); return; }
 if (!document.hidden) ccPull(0);
 }, 6000);
 }
@@ -533,21 +546,138 @@ var m = ccFind(id); if (m) { m.del = 1; m.text = ''; }
 CC.sel = 0; ccPaint(); toast(CT('deleted'));
 });
 }
-function ccSend() {
-var ta = $('#ccIn'), nk = $('#ccNick');
-if (nk) { var n = trim(nk.value || ''); if (!n) { toast(CCs('nickNeed')); nk.focus(); return; } S.name = n.slice(0, 20); save(); }
-var text = trim(ta ? ta.value : ''); if (!text) return toast(CCs('e_empty'));
+function ccNeedNick() {
+var nk = $('#ccNick');
+if (nk) { var n = trim(nk.value || ''); if (!n) { toast(CCs('nickNeed')); nk.focus(); return true; } S.name = n.slice(0, 20); save(); }
+return false;
+}
+function ccPost(body, done) {
 if (CC.sending) return; CC.sending = 1;
 var btn = $('#ccSend'); if (btn) btn.disabled = true;
-ccApi('POST', '/c/' + S.ch.code + '/send', { dev: S.ch.dev, nick: trim(S.name), text: text, re: CC.re || 0, after: CC.last }, function (j, e) {
+if (!S.ch.dev) S.ch.dev = uid();
+body.dev = S.ch.dev; body.nick = trim(S.name); body.re = CC.re || 0; body.after = CC.last;
+ccApi('POST', '/c/' + S.ch.code + '/send', body, function (j, e) {
 CC.sending = 0; var b = $('#ccSend'); if (b) b.disabled = false;
+var up = $('#caUp'); if (up) up.style.display = 'none';
 if (!j) return toast(ccErr(e));
-CC.draft = ''; var hadRe = CC.re; CC.re = 0; if (ta) ta.value = '';
-if (nk || hadRe) { ccMerge(j.msgs); vChChat(); return; }
-var t2 = $('#ccIn'); if (t2) { t2.value = ''; ccGrow(t2); t2.focus(); }
-ccMerge(j.msgs); ccPaint(true);
+var hadRe = CC.re, hadNick = !!$('#ccNick'); CC.re = 0;
+if (done) done();
+ccMerge(j.msgs);
+if (hadNick || hadRe) { vChChat(); return; }
+ccPaint(true);
 });
 }
+function ccSend() {
+if (ccNeedNick()) return;
+var ta = $('#ccIn'), text = trim(ta ? ta.value : ''); if (!text) return toast(CCs('e_empty'));
+ccPost({ text: text }, function () { CC.draft = ''; var t2 = $('#ccIn'); if (t2) { t2.value = ''; ccGrow(t2); } });
+}
+/* ── 聊天室：相片、檔案、貼圖、語音（v2，2026-11-09；後端 church-chat v4） ── */
+function CA(zh, zs, en, ko) { var l = L(); return l === 'en' ? en : l === 'zs' ? zs : l === 'ko' ? (ko || en) : zh; }
+var CA_STK = [
+['amen', '🙏', '阿們', '阿们', 'Amen', '아멘', '#F6E7B4', '#7A5800'], ['halle', '🙌', '哈利路亞', '哈利路亚', 'Hallelujah', '할렐루야', '#FFE1C6', '#A4481A'],
+['thanks', '💐', '感謝主', '感谢主', 'Thank the Lord', '주님 감사해요', '#FBE4E9', '#A33A55'], ['pray', '🕊️', '為你禱告', '为你祷告', 'Praying for you', '기도할게요', '#E1EBF7', '#2F5C93'],
+['love', '❤️', '愛你', '爱你', 'Love you', '사랑해요', '#FBE0E0', '#B33535'], ['peace', '🌿', '平安', '平安', 'Peace', '평안', '#E3F0E1', '#356B32'],
+['cheer', '💪', '加油', '加油', 'Keep going', '힘내요', '#FFF0C8', '#8A5A10'], ['praise', '🎶', '讚美主', '赞美主', 'Praise the Lord', '주님 찬양', '#ECE3F5', '#6C3F8A'],
+['good', '👍', '好棒', '好棒', 'Well done', '잘했어요', '#DDF3F0', '#1C6E63'], ['hug', '🤗', '抱抱', '抱抱', 'Hugs', '안아줄게요', '#FDE8D8', '#9A4E28'],
+['morning', '🌅', '早安', '早安', 'Good morning', '좋은 아침', '#FFF3D6', '#94621A'], ['night', '🌙', '晚安', '晚安', 'Good night', '잘 자요', '#E2E5F5', '#3A4A8C'],
+['welcome', '🎉', '歡迎', '欢迎', 'Welcome', '환영해요', '#FCE7F0', '#A3346E'], ['bible', '📖', '讀經去', '读经去', 'Time for the Word', '말씀 읽어요', '#E7EDF6', '#1F3C88'],
+['withyou', '✝️', '主與你同在', '主与你同在', 'The Lord is with you', '주님이 함께하세요', '#F3ECDC', '#6E5019'], ['sorry', '🥺', '對不起', '对不起', 'Sorry', '미안해요', '#EDEDED', '#4A4A4A']
+];
+var CR3 = { rec: null, chunks: [], t0: 0, timer: 0, cancel: 0, stk: 0 };
+function caStkFind(k) { for (var i = 0; i < CA_STK.length; i++) if (CA_STK[i][0] === k) return CA_STK[i]; return null; }
+function caStkHtml(k) { var s = caStkFind(k); if (!s) return '<div class="cct">[' + esc(CA('貼圖', '贴图', 'Sticker', '스티커')) + ']</div>'; return '<div class="castk" style="background:' + s[6] + ';color:' + s[7] + '"><span class="e">' + s[1] + '</span><b>' + esc(CA(s[2], s[3], s[4], s[5])) + '</b></div>'; }
+function caUrl(id) { return CCURL + '/c/' + S.ch.code + '/att/' + id; }
+function caSize(n) { n = +n || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function caDur(n) { n = Math.round(+n || 0); return Math.floor(n / 60) + ':' + ('0' + (n % 60)).slice(-2); }
+function caHtml(m, q) {
+var mt = m.meta || {}, qh = q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '';
+var qb = qh ? '<div class="cct">' + qh + '</div>' : '';
+if (m.kind === 'stk') return qb + caStkHtml(mt.stk);
+if (m.kind === 'img' && m.att) return qb + '<img class="caimg" src="' + esc(caUrl(m.att)) + '" alt="photo" loading="lazy" onclick="caView(' + m.att + ')"' + (mt.w && mt.h ? ' style="aspect-ratio:' + mt.w + '/' + mt.h + '"' : '') + '>';
+if (m.kind === 'voice' && m.att) return '<div class="cct cavoice">' + qh + '<audio controls preload="none" src="' + esc(caUrl(m.att)) + '"></audio>' + (mt.dur ? '<small>🎤 ' + caDur(mt.dur) + '</small>' : '') + '</div>';
+if (m.att) return '<a class="cct cafile" href="' + esc(caUrl(m.att)) + '" target="_blank" rel="noopener" download="' + esc(mt.name || 'file') + '">' + qh + '<span class="fi">📄</span><span class="fn"><b>' + esc(mt.name || 'file') + '</b><small>' + esc(caSize(mt.size)) + ' · ' + esc(CA('點一下下載', '点一下下载', 'Tap to download', '눌러서 다운로드')) + '</small></span></a>';
+return '<div class="cct">' + chLink(m.text) + '</div>';
+}
+function caView(id) {
+var old = $('#caView'); if (old) old.parentNode.removeChild(old);
+var u = caUrl(id), el = document.createElement('div'); el.id = 'caView'; el.className = 'caview';
+el.innerHTML = '<img src="' + esc(u) + '" alt=""><div class="bar"><a class="btn sm" href="' + esc(u) + '" target="_blank" rel="noopener" download>' + esc(CA('下載／另存', '下载／另存', 'Download', '다운로드')) + '</a><button class="btn sm" onclick="var v=document.getElementById(\'caView\');v.parentNode.removeChild(v)">' + esc(CA('關閉', '关闭', 'Close', '닫기')) + '</button></div>';
+el.onclick = function (e) { if (e.target === el || e.target.tagName === 'IMG') el.parentNode.removeChild(el); };
+document.body.appendChild(el);
+}
+function caPanel() {
+var h = '<div class="castkp" id="caStk" style="display:' + (CR3.stk ? 'grid' : 'none') + '">';
+eachA(CA_STK, function (s) { h += '<button onclick="caSendStk(\'' + s[0] + '\')">' + caStkHtml(s[0]) + '</button>'; });
+return h + '</div>';
+}
+function caStkToggle() { CR3.stk = CR3.stk ? 0 : 1; var p = $('#caStk'); if (p) p.style.display = CR3.stk ? 'grid' : 'none'; ccFit(); }
+function caSendStk(k) { if (ccNeedNick()) return; var s = caStkFind(k); if (!s) return; CR3.stk = 0; var p = $('#caStk'); if (p) p.style.display = 'none'; ccPost({ kind: 'stk', stk: k, text: '[貼圖] ' + s[2] }); }
+function caUp(t) { var u = $('#caUp'); if (u) { u.textContent = t; u.style.display = t ? 'block' : 'none'; ccFit(); } }
+function caRead(file, cb) { var r = new FileReader(); r.onload = function () { cb(String(r.result || '')); }; r.onerror = function () { cb(''); }; r.readAsDataURL(file); }
+function caErr(e) { if (e === 'toobig' || e === 'http413') return CA('檔案太大，上限 5MB', '文件太大，上限 5MB', 'File too large — 5 MB maximum', '파일이 너무 커요 (최대 5MB)'); if (e === 'attfull') return CA('今天傳的相片和檔案太多了，明天再傳', '今天传的照片和文件太多了，明天再传', 'Too many files today — try tomorrow', '오늘은 파일이 너무 많아요'); return ccErr(e); }
+function caImg(file, cb) {
+if (/gif$/i.test(file.type) && file.size <= 4.5 * 1048576) { caRead(file, function (d) { cb(d ? { data: d, mime: 'image/gif', name: file.name || 'photo.gif', w: 0, h: 0 } : null); }); return; }
+var url; try { url = URL.createObjectURL(file); } catch (e) { cb(null); return; }
+var im = new Image();
+im.onload = function () {
+var w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, 1600 / Math.max(w, h)), cw = Math.max(1, Math.round(w * k)), chh = Math.max(1, Math.round(h * k));
+var cv = document.createElement('canvas'); cv.width = cw; cv.height = chh; var g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cw, chh); g.drawImage(im, 0, 0, cw, chh);
+var q = 0.82, d = cv.toDataURL('image/jpeg', q); while (d.length * 0.75 > 4.5 * 1048576 && q > 0.4) { q -= 0.15; d = cv.toDataURL('image/jpeg', q); }
+try { URL.revokeObjectURL(url); } catch (e) { }
+cb({ data: d, mime: 'image/jpeg', name: (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg', w: cw, h: chh });
+};
+im.onerror = function () { try { URL.revokeObjectURL(url); } catch (e) { } cb(null); };
+im.src = url;
+}
+function caPickPhoto(inp) {
+var f = inp.files && inp.files[0]; inp.value = ''; if (!f || ccNeedNick()) return;
+caUp(CA('相片處理中…', '照片处理中…', 'Preparing photo…', '사진 준비 중…'));
+caImg(f, function (r) {
+if (!r) { caUp(''); return toast(CA('這張相片讀不出來，請換一張', '这张照片读不出来，请换一张', 'Couldn’t read this photo', '사진을 읽을 수 없어요')); }
+caUp(CA('相片上傳中…', '照片上传中…', 'Uploading photo…', '사진 올리는 중…'));
+ccPost({ kind: 'img', data: r.data, mime: r.mime, name: r.name, w: r.w, h: r.h, text: '' });
+});
+}
+function caPickFile(inp) {
+var f = inp.files && inp.files[0]; inp.value = ''; if (!f || ccNeedNick()) return;
+if (f.size > 5 * 1048576) return toast(caErr('toobig'));
+var img = /^image\/(jpeg|png|webp|gif)$/i.test(f.type);
+if (img && f.size > 1.5 * 1048576) { caPickPhoto({ files: [f], value: '' }); return; }
+caUp(CA('檔案上傳中…', '文件上传中…', 'Uploading file…', '파일 올리는 중…') + ' ' + caSize(f.size));
+caRead(f, function (d) {
+if (!d) { caUp(''); return; }
+ccPost({ kind: img ? 'img' : 'file', data: d, mime: f.type || 'application/octet-stream', name: f.name || 'file', text: '' });
+});
+}
+function caRecMime() { var Lm = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']; try { for (var i = 0; i < Lm.length; i++) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(Lm[i])) return Lm[i]; } catch (e) { } return ''; }
+function caRecBar(on) { var b = $('#caRec'); if (b) { b.style.display = on ? 'flex' : 'none'; ccFit(); } }
+function caRecStart() {
+if (CR3.rec || ccNeedNick()) return;
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) return toast(CA('這支手機的瀏覽器不支援錄音', '这部手机的浏览器不支持录音', 'Recording isn’t supported in this browser', '이 브라우저는 녹음을 지원하지 않아요'));
+navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function (st) {
+var mt = caRecMime(), r;
+try { r = mt ? new MediaRecorder(st, { mimeType: mt, audioBitsPerSecond: 48000 }) : new MediaRecorder(st); } catch (e) { r = new MediaRecorder(st); }
+CR3.rec = r; CR3.chunks = []; CR3.cancel = 0; CR3.t0 = now();
+r.ondataavailable = function (e) { if (e.data && e.data.size) CR3.chunks.push(e.data); };
+r.onstop = function () {
+var dur = Math.round((now() - CR3.t0) / 1000), type = (r.mimeType || mt || 'audio/webm').split(';')[0];
+try { st.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+clearInterval(CR3.timer); CR3.rec = null; caRecBar(0);
+if (CR3.cancel || !CR3.chunks.length) return;
+if (dur < 1) return toast(CA('錄音太短了', '录音太短了', 'Too short', '너무 짧아요'));
+var blob = new Blob(CR3.chunks, { type: type });
+if (blob.size > 5 * 1048576) return toast(caErr('toobig'));
+caUp(CA('語音上傳中…', '语音上传中…', 'Uploading voice…', '음성 올리는 중…'));
+caRead(blob, function (d) { if (!d) { caUp(''); return; } ccPost({ kind: 'voice', data: d, mime: type, name: 'voice.' + (/mp4|aac|m4a/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm'), dur: dur, text: '' }); });
+};
+r.start(1000);
+CR3.timer = setInterval(function () { var s2 = Math.floor((now() - CR3.t0) / 1000), el = $('#caRecT'); if (el) el.textContent = caDur(s2); if (s2 >= 180) caRecStop(0); }, 250);
+caRecBar(1);
+try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) { }
+})['catch'](function () { toast(CA('沒有取得麥克風權限，請在瀏覽器設定允許使用麥克風', '没有取得麦克风权限，请在浏览器设置允许使用麦克风', 'Microphone permission was not granted', '마이크 권한이 필요해요')); });
+}
+function caRecStop(cancel) { if (!CR3.rec) return; CR3.cancel = cancel ? 1 : 0; try { CR3.rec.stop(); } catch (e) { caRecBar(0); } }
 try { ccCss(); } catch (e) { }
 
 /* ── 關懷名單（v1，2026-11-09）：弟兄姊妹同意後分享靈修進度，負責人看得到誰完成、誰需要關懷 ──
