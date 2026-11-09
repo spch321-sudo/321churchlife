@@ -40,7 +40,7 @@ body.crOn .top{top:calc(40px + env(safe-area-inset-top));padding-top:10px}
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109';
+var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -1817,7 +1817,8 @@ function openStudio(c) { stopAll(); closeHSheet(); if (XZ.open) closeXz(); studi
 function vStudio() {
 if (!studio) return back();
 var c = studio, b = topbar(T('studioT'), true) + '<div class="cardpv" id="cardPv"></div>' +
-'<div class="row" style="gap:8px"><button class="btn pri grow" data-act="csave">' + T('saveImg') + '</button><button class="btn grow" data-act="cshare">' + T('share') + '</button></div><div class="card">';
+'<div class="row" style="gap:8px"><button class="btn pri grow" data-act="csave">' + T('saveImg') + '</button><button class="btn grow" data-act="cshare">' + T('share') + '</button></div>' +
+'<button class="btn block" data-act="cchat" style="margin-top:8px">💬 ' + esc(L() === 'zh' || L() === 'zs' ? '分享到聊天室' : 'Share to a chat') + '</button><div class="card">';
 var tp = []; eachA(CARD_ORDER, function (k) { tp.push([k, T(CARD_TPL[k].n)]); });
 b += '<p class="eyebrow">' + T('cTpl') + '</p>' + chipRow('ctpl', tp, S.card.tpl, 'v');
 b += '<p class="eyebrow">' + T('cSize') + '</p>' + chipRow('csize', [['p', T('sz916')], ['t', T('sz45')], ['s', T('szSq')], ['w', T('szWide')]], S.card.size, 'v');
@@ -1924,6 +1925,7 @@ else if (a === 'pxmore') pxRun(false);
 else if (a === 'pxpick') pxPick(+n.getAttribute('data-i'));
 else if (a === 'csave') cardSave();
 else if (a === 'cshare') cardShare();
+else if (a === 'cchat') { if (cardImg && window.XJ321) XJ321.shareImg(cardImg, {}); }
 else if (a === 'mkcard') { var mc = window.CARDSRC && CARDSRC[n.getAttribute('data-k')]; if (mc) openStudio(mc); }
 }, false);
 window.onerror = function (m, src, line) { try { var t = $('#toast'); if (t) { t.textContent = 'Error: ' + m + ' @' + line; t.className = 'toast on'; } } catch (e) { } };
@@ -6187,6 +6189,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     if (k === 'x') return close();
     if (k === 'save') return saveImg();
     if (k === 'share') return shareImg();
+    if (k === 'chat') return chatImg();
     if (k === 'tpl' || k === 'size' || k === 'border') { g[k] = v; keep(); return paint(); }
     if (k === 'fs' || k === 'vol') { g[k] = +v; keep(); return paint(); }
     if (k === 'autofit') { const r = cardAutoFit(); keep(); paint(); return say(r); }
@@ -6249,6 +6252,12 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
     a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(u), 4000);
     say(T('已儲存', 'Saved'));
+  }
+  /* 美圖分享到聊天室（sh1109）：教會聊天室或我的小家 */
+  async function chatImg() {
+    const b = await cardBlob(); if (!b) return say(T('美圖還沒做好，請稍候', 'The card isn’t ready yet'));
+    if (!window.XJ321 || !XJ321.shareImg) return say(T('載入中…', 'Loading…'));
+    XJ321.shareImg(b, { beforeGo: () => close(), delay: 200 });
   }
   async function shareImg() {
     const b = await cardBlob();
@@ -6315,7 +6324,7 @@ function mx_strBytes(s){const a=new Uint8Array(s.length);for(let i=0;i<s.length;
       <div class="gxshead"><b>🖼 ${esc(T('美圖工作室', 'Card studio'))}</b><button class="ico" data-k="x" aria-label="close">✕</button></div>
       <div class="gxspv"><img id="gxsPv" alt=""></div>
       <p class="xs muted" style="text-align:center;margin:4px 0 8px">${esc(T('長按圖片也可以直接儲存', 'You can also press and hold the picture to save'))}</p>
-      <div class="gxacts"><button class="btn pri" data-k="share">↗ ${esc(T('分享', 'Share'))}</button><button class="btn" data-k="save">⬇ ${esc(T('存到手機', 'Save'))}</button></div>
+      <div class="gxacts"><button class="btn pri" data-k="share">↗ ${esc(T('分享', 'Share'))}</button><button class="btn" data-k="save">⬇ ${esc(T('存到手機', 'Save'))}</button><button class="btn" data-k="chat" style="flex-basis:100%">💬 ${esc(T('分享到聊天室', 'Share to a chat'))}</button></div>
       <div class="gxtabs">${TABS.map(x => `<button data-t="${x[0]}">${esc(T(x[1][0], x[1][1]))}</button>`).join('')}</div>
       <div id="gxsBody"></div></div>`;
     EL.classList.add('on');
