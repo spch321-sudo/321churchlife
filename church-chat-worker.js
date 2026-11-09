@@ -25,6 +25,11 @@
         分段存在 D1（attc 資料表，不需要另外開通 R2／KV）；GET /c/代碼/att/編號 取檔。
         貼圖是 App 內建圖案，只存代號。舊版 App 會看到「📷 相片」「📎 檔名」「[貼圖] 阿們」的文字。
         只要把本檔重新貼上、Deploy，資料表會自動升級。
+   v5（2026-11-09）：互動聖經「小家＋235 團隊」整合。
+        ① 代碼以 TM 開頭的是 235 團隊的聊天室（TM＋六碼團隊邀請碼），不必向 church-news 確認，直接可以聊天、傳附件。
+        ② 小家可以登記「從這個小家長出來的 235 團隊」：POST /c/小家代碼/link、GET /c/小家代碼/links。
+        ③ 關懷名單多記每個人有沒有 2（屬靈同伴）、3（屬靈父母兒女）、5（五重團隊）的關係（t2／t3／t5，只是數量）。
+        一樣只要重新貼上、Deploy，不必新增任何綁定。
    ===================================================================== */
 
 const NEWS = 'https://church-news.spch321.workers.dev';
@@ -72,6 +77,10 @@ async function init(db) {
   for (const col of ['kind TEXT', 'att INTEGER', 'meta TEXT']) {
     try { await db.prepare('ALTER TABLE msg ADD COLUMN ' + col).run(); } catch (e) { }
   }
+  for (const col of ['t2 INTEGER', 't3 INTEGER', 't5 INTEGER']) {
+    try { await db.prepare('ALTER TABLE member ADD COLUMN ' + col).run(); } catch (e) { }
+  }
+  try { await db.prepare(`CREATE TABLE IF NOT EXISTS link (code TEXT NOT NULL, team TEXT NOT NULL, name TEXT, kind TEXT, ts INTEGER, PRIMARY KEY (code, team))`).run(); } catch (e) { }
   ready = true;
 }
 
@@ -85,6 +94,7 @@ function newsFetch(path, init) {
 /* 教會代碼是否存在（快取 12 小時）。church-news 明確說「沒有這個教會」才擋；
    暫時連不上（或還沒設定 Service binding）就先放行 10 分鐘，不讓聊天整個停擺。 */
 async function churchOk(db, code) {
+  if (/^TM[A-Z0-9]{6}$/.test(code)) return '';   /* v5：235 團隊聊天室 */
   const now = Date.now();
   const row = await db.prepare('SELECT name, until FROM church WHERE code=?').bind(code).first();
   if (row && row.until > now) return row.name || '';
@@ -163,7 +173,7 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat', v: 4, att: true, news: !!(env.NEWS && env.NEWS.fetch) });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 5, att: true, team: true, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
     if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0);
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
@@ -175,6 +185,10 @@ export default {
       const dev = clean(url.searchParams.get('dev'), 64);
       const msgs = await list(db, code, after, dev);
       return J({ ok: true, msgs, now: Date.now() });
+    }
+    if (req.method === 'GET' && act === 'links') {
+      const rs = await db.prepare('SELECT team,name,kind,ts FROM link WHERE code=? ORDER BY ts').bind(code).all();
+      return J({ ok: true, list: (rs.results || []).map(x => ({ team: x.team, name: x.name, kind: x.kind, ts: x.ts })) });
     }
     if (req.method === 'GET' && act === 'today') {
       const day = clean(url.searchParams.get('day'), 10);
@@ -256,6 +270,16 @@ export default {
       let rank = 0; all.forEach((m, i) => { if (m.who === me) rank = i + 1; });
       return J({ ok: true, rank, list: all });
     }
+    if (act === 'link') {
+      const team = clean(b.team, 6).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (team.length !== 6) return bad('team');
+      if (b.del) { await db.prepare('DELETE FROM link WHERE code=? AND team=?').bind(code, team).run(); return J({ ok: true }); }
+      if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
+      const cnt = await db.prepare('SELECT COUNT(*) AS n FROM link WHERE code=?').bind(code).first();
+      if (cnt && cnt.n >= 60) return bad('full', 429);
+      await db.prepare('INSERT OR REPLACE INTO link(code,team,name,kind,ts) VALUES(?,?,?,?,?)').bind(code, team, clean(b.name, 40), ['2', '3', '5'].indexOf(String(b.kind)) >= 0 ? String(b.kind) : '5', Date.now()).run();
+      return J({ ok: true });
+    }
     if (act === 'prog') {
       if (!b.share) {
         await db.prepare('DELETE FROM member WHERE code=? AND dev=?').bind(code, dev).run();
@@ -263,15 +287,16 @@ export default {
       }
       if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
       const n = v => Math.max(0, Math.min(1e13, parseInt(v, 10) || 0));
-      await db.prepare('INSERT OR REPLACE INTO member(code,dev,nick,total,last,d7,pw,pd,pn,upd) VALUES(?,?,?,?,?,?,?,?,?,?)')
-        .bind(code, dev, clean(b.nick, 20) || '弟兄姊妹', n(b.total), n(b.last), n(b.d7), n(b.pw), n(b.pd), n(b.pn), Date.now()).run();
+      const tn = v => (v == null || v === '') ? null : Math.max(0, Math.min(99, parseInt(v, 10) || 0));
+      await db.prepare('INSERT OR REPLACE INTO member(code,dev,nick,total,last,d7,pw,pd,pn,upd,t2,t3,t5) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(code, dev, clean(b.nick, 20) || '弟兄姊妹', n(b.total), n(b.last), n(b.d7), n(b.pw), n(b.pd), n(b.pn), Date.now(), tn(b.t2), tn(b.t3), tn(b.t5)).run();
       return J({ ok: true, shared: 1 });
     }
     if (act === 'roster') {
       if (!(await leaderOk(code, b.pin))) return bad('badpin', 403);
-      const rs = await db.prepare('SELECT dev,nick,total,last,d7,pw,pd,pn,upd FROM member WHERE code=? ORDER BY last').bind(code).all();
+      const rs = await db.prepare('SELECT dev,nick,total,last,d7,pw,pd,pn,upd,t2,t3,t5 FROM member WHERE code=? ORDER BY last').bind(code).all();
       const list = [];
-      for (const m of rs.results || []) list.push({ who: await tag(m.dev), nick: m.nick, total: m.total, last: m.last, d7: m.d7, pw: m.pw, pd: m.pd, pn: m.pn, upd: m.upd });
+      for (const m of rs.results || []) list.push({ who: await tag(m.dev), nick: m.nick, total: m.total, last: m.last, d7: m.d7, pw: m.pw, pd: m.pd, pn: m.pn, upd: m.upd, t2: m.t2, t3: m.t3, t5: m.t5 });
       return J({ ok: true, list, now: Date.now() });
     }
     return bad('notfound', 404);
