@@ -210,7 +210,7 @@ async function getAtt(db, code, id, dev) {
     'Content-Disposition': (img ? 'inline' : 'attachment') + "; filename*=UTF-8''" + fn,
     'Cache-Control': 'public, max-age=31536000, immutable',
     'X-Content-Type-Options': 'nosniff',
-    'Content-Security-Policy': "default-src 'none'; sandbox"
+    'Content-Security-Policy': "default-src 'none'"   /* v8：拿掉 sandbox——iPhone 會因 sandbox 擋掉檔案下載（空白頁）；非圖片一律 octet-stream＋nosniff，不會被當網頁執行 */
   } });
 }
 
