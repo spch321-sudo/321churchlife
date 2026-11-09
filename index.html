@@ -40,7 +40,7 @@ body.crOn .top{top:calc(40px + env(safe-area-inset-top));padding-top:10px}
 <div id="sheet" class="sheet" onclick="if(event.target===this)closeSheet()"><div class="in" id="sbody"></div></div>
 <div id="toast" class="toast"></div>
 <script>
-var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109';
+var APPVER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109-nv1109';
 var KEY = 'cl321';
 var SVC = { xz: 'https://xiaozhi-proxy.spch321.workers.dev', tts: 'https://azure-tts.spch321.workers.dev', model: 'claude-sonnet-4-6' };
 var STAGES = [[1, 1, 8, 's1'], [2, 9, 21, 's2'], [3, 22, 30, 's3'], [4, 31, 44, 's4'], [5, 45, 52, 's5']];
@@ -164,10 +164,10 @@ var AUPD = (function () {
   };
   var U = { reg: null, target: '', pending: false, applying: 0, inited: 0 };
   var TX = {
-    zh: { newVer: '有新版本，點一下立即更新', updating: '正在更新到新版…', latest: '目前已是最新版 v', found: '找到新版本，正在更新…', foundBusy: '找到新版本，忙完就會自動更新', netErr: '無法檢查更新，請確認網路', checking: '檢查更新中…', done: '已更新到新版 v' },
-    ko: { newVer: '새 버전이 있어요. 눌러서 지금 업데이트하세요', updating: '새 버전으로 업데이트하는 중…', latest: '최신 버전이에요 v', found: '새 버전을 찾았어요. 업데이트하는 중…', foundBusy: '새 버전을 찾았어요. 잠시 후 한가할 때 자동으로 업데이트돼요', netErr: '업데이트를 확인할 수 없어요. 인터넷 연결을 확인해 주세요', checking: '업데이트 확인 중…', done: '새 버전으로 업데이트했어요 v' },
-    zs: { newVer: '有新版本，点一下立即更新', updating: '正在更新到新版…', latest: '目前已是最新版 v', found: '找到新版本，正在更新…', foundBusy: '找到新版本，忙完就会自动更新', netErr: '无法检查更新，请确认网络', checking: '检查更新中…', done: '已更新到新版 v' },
-    en: { newVer: 'A new version is ready. Tap to update', updating: 'Updating to the new version…', latest: 'You are on the latest version v', found: 'New version found, updating…', foundBusy: 'New version found. It will update when you are idle', netErr: 'Cannot check for updates. Please check your connection', checking: 'Checking for updates…', done: 'Updated to version ' }
+    zh: { newVer: '有新版本，點一下立即更新', updating: '正在更新到新版…', latest: '目前已是最新版 v', found: '找到新版本，正在更新…', foundBusy: '找到新版本，忙完就會自動更新', netErr: '無法檢查更新，請確認網路', checking: '檢查更新中…', done: '已更新到最新版本' },
+    ko: { newVer: '새 버전이 있어요. 눌러서 지금 업데이트하세요', updating: '새 버전으로 업데이트하는 중…', latest: '최신 버전이에요 v', found: '새 버전을 찾았어요. 업데이트하는 중…', foundBusy: '새 버전을 찾았어요. 잠시 후 한가할 때 자동으로 업데이트돼요', netErr: '업데이트를 확인할 수 없어요. 인터넷 연결을 확인해 주세요', checking: '업데이트 확인 중…', done: '최신 버전으로 업데이트했어요' },
+    zs: { newVer: '有新版本，点一下立即更新', updating: '正在更新到新版…', latest: '目前已是最新版 v', found: '找到新版本，正在更新…', foundBusy: '找到新版本，忙完就会自动更新', netErr: '无法检查更新，请确认网络', checking: '检查更新中…', done: '已更新到最新版本' },
+    en: { newVer: 'A new version is ready. Tap to update', updating: 'Updating to the new version…', latest: 'You are on the latest version v', found: 'New version found, updating…', foundBusy: 'New version found. It will update when you are idle', netErr: 'Cannot check for updates. Please check your connection', checking: 'Checking for updates…', done: 'Updated to the latest version' }
   };
   function now() { return +new Date(); }
   function ver() { try { return String(CFG.ver()); } catch (e) { return ''; } }
@@ -318,7 +318,7 @@ var AUPD = (function () {
     if (U.inited) return; U.inited = 1;
     if (!/^https?:/.test(location.protocol)) return;
     try { if (/[?&]u=\d+/.test(location.search) && history.replaceState) { var s = location.search.replace(/([?&])u=\d+&?/, '$1').replace(/[?&]$/, ''); history.replaceState(null, '', location.pathname + s + location.hash); } } catch (e) { }
-    if (ssGet('auTry') && ssGet('auTry') === ver()) { ssSet('auTry', ''); ssSet('auHard', ''); setTimeout(function () { say(T('done') + ver()); }, 1200); }
+    if (ssGet('auTry') && ssGet('auTry') === ver()) { ssSet('auTry', ''); ssSet('auHard', ''); setTimeout(function () { say(T('done')); }, 1200); }
     register();
     setTimeout(function () { check(0); }, 2500);
     setInterval(function () { check(0); }, 30 * 60 * 1000);
