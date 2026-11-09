@@ -30,6 +30,9 @@
         ② 小家可以登記「從這個小家長出來的 235 團隊」：POST /c/小家代碼/link、GET /c/小家代碼/links。
         ③ 關懷名單多記每個人有沒有 2（屬靈同伴）、3（屬靈父母兒女）、5（五重團隊）的關係（t2／t3／t5，只是數量）。
         一樣只要重新貼上、Deploy，不必新增任何綁定。
+   v6（2026-11-09）：私訊。同一個小家／教會／團隊裡的兩個人可以一對一聊天（也能傳相片、檔案、語音、貼圖）。
+        私訊房間＝DM:群組代碼:兩人代號（裝置代號的雜湊，排序後相連）；只有這兩支手機讀得到，
+        連附件也要帶自己的裝置代號才拿得到。GET /c/代碼/dms 列出我的私訊；/msgs、/send、/del 加 with=對方代號 就是私訊。
    ===================================================================== */
 
 const NEWS = 'https://church-news.spch321.workers.dev';
@@ -80,6 +83,7 @@ async function init(db) {
   for (const col of ['t2 INTEGER', 't3 INTEGER', 't5 INTEGER']) {
     try { await db.prepare('ALTER TABLE member ADD COLUMN ' + col).run(); } catch (e) { }
   }
+  try { await db.prepare(`CREATE TABLE IF NOT EXISTS dmn (code TEXT NOT NULL, who TEXT NOT NULL, nick TEXT, ts INTEGER, PRIMARY KEY (code, who))`).run(); } catch (e) { }
   try { await db.prepare(`CREATE TABLE IF NOT EXISTS link (code TEXT NOT NULL, team TEXT NOT NULL, name TEXT, kind TEXT, ts INTEGER, PRIMARY KEY (code, team))`).run(); } catch (e) { }
   ready = true;
 }
@@ -141,10 +145,23 @@ async function list(db, code, after, dev) {
 }
 
 /* 取相片／檔案：相片直接顯示；其他檔案一律當下載（不在本網域開網頁，避免夾帶程式） */
-async function getAtt(db, code, id) {
+/* 私訊房間：DM:群組代碼:兩人代號（排序）。with 不合法或是自己就回 null */
+async function roomOf(code, withWho, dev) {
+  if (!withWho) return code;
+  if (!/^[0-9a-f]{8}$/.test(withWho)) return null;
+  const me = await tag(dev);
+  if (me === withWho) return null;
+  return 'DM:' + code + ':' + [me, withWho].sort().join(':');
+}
+async function getAtt(db, code, id, dev) {
   if (!id) return bad('id', 404);
   const a = await db.prepare('SELECT id,code,mime,name,size,parts FROM att WHERE id=?').bind(id).first();
-  if (!a || a.code !== code.replace(/[^A-Z0-9]/g, '')) return bad('gone', 404);
+  const g = code.replace(/[^A-Z0-9]/g, '');
+  if (!a) return bad('gone', 404);
+  if (String(a.code).indexOf('DM:') === 0) {
+    const ps = String(a.code).split(':'), me = dev ? await tag(dev) : '';
+    if (ps[1] !== g || !me || (ps[2] !== me && ps[3] !== me)) return bad('gone', 404);
+  } else if (a.code !== g) return bad('gone', 404);
   let b64 = '';
   for (let i = 0; i < (a.parts || 1); i++) {
     const c = await db.prepare('SELECT data FROM attc WHERE att=? AND n=?').bind(id, i).first();
@@ -173,9 +190,9 @@ export default {
     const db = env.DB; await init(db);
     const url = new URL(req.url);
     const p = url.pathname.split('/').filter(Boolean);
-    if (!p.length) return J({ ok: true, service: 'church-chat', v: 5, att: true, team: true, news: !!(env.NEWS && env.NEWS.fetch) });
+    if (!p.length) return J({ ok: true, service: 'church-chat', v: 6, att: true, team: true, dm: true, news: !!(env.NEWS && env.NEWS.fetch) });
     if (p[0] !== 'c' || !p[1]) return bad('notfound', 404);
-    if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0);
+    if (req.method === 'GET' && p[2] === 'att') return getAtt(db, String(p[1]).toUpperCase(), parseInt(p[3], 10) || 0, clean(url.searchParams.get('dev'), 64));
     const code = String(p[1]).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
     if (code.length < 4) return bad('nochurch', 404);
     const act = p[2] || 'msgs';
@@ -183,8 +200,25 @@ export default {
     if (req.method === 'GET' && act === 'msgs') {
       const after = parseInt(url.searchParams.get('after') || '0', 10) || 0;
       const dev = clean(url.searchParams.get('dev'), 64);
-      const msgs = await list(db, code, after, dev);
+      const room = await roomOf(code, clean(url.searchParams.get('with'), 8), dev);
+      if (!room) return bad('with');
+      const msgs = await list(db, room, after, dev);
       return J({ ok: true, msgs, now: Date.now() });
+    }
+    if (req.method === 'GET' && act === 'dms') {
+      const dev = clean(url.searchParams.get('dev'), 64);
+      if (dev.length < 6) return bad('dev');
+      const me = await tag(dev);
+      const rs = await db.prepare('SELECT code, MAX(id) AS last FROM msg WHERE code LIKE ? OR code LIKE ? GROUP BY code ORDER BY last DESC LIMIT 60')
+        .bind('DM:' + code + ':' + me + ':%', 'DM:' + code + ':%:' + me).all();
+      const out = [];
+      for (const r of rs.results || []) {
+        const ps = String(r.code).split(':'), other = ps[2] === me ? ps[3] : ps[2];
+        const m = await db.prepare('SELECT id,ts,dev,text,del FROM msg WHERE id=?').bind(r.last).first();
+        const n = await db.prepare('SELECT nick FROM dmn WHERE code=? AND who=?').bind(code, other).first();
+        out.push({ with: other, nick: (n && n.nick) || '', last: r.last, ts: m ? m.ts : 0, text: m && !m.del ? String(m.text).slice(0, 60) : '', mine: m && m.dev === dev ? 1 : 0 });
+      }
+      return J({ ok: true, me, list: out });
     }
     if (req.method === 'GET' && act === 'links') {
       const rs = await db.prepare('SELECT team,name,kind,ts FROM link WHERE code=? ORDER BY ts').bind(code).all();
@@ -222,23 +256,26 @@ export default {
       }
       if (!text) return bad('empty');
       if ((await churchOk(db, code)) === null) return bad('nochurch', 404);
+      const room = await roomOf(code, clean(b.with, 8), dev);
+      if (!room) return bad('with');
+      if (room !== code) await db.prepare('INSERT OR REPLACE INTO dmn(code,who,nick,ts) VALUES(?,?,?,?)').bind(code, await tag(dev), nick, Date.now()).run();
       const now = Date.now();
-      const last = await db.prepare('SELECT ts FROM msg WHERE code=? AND dev=? ORDER BY id DESC LIMIT 1').bind(code, dev).first();
+      const last = await db.prepare('SELECT ts FROM msg WHERE code=? AND dev=? ORDER BY id DESC LIMIT 1').bind(room, dev).first();
       if (last && now - last.ts < 1500) return bad('slow', 429);
-      const cnt = await db.prepare('SELECT COUNT(*) AS n FROM msg WHERE code=? AND ts>?').bind(code, now - 864e5).first();
+      const cnt = await db.prepare('SELECT COUNT(*) AS n FROM msg WHERE code=? AND ts>?').bind(room, now - 864e5).first();
       if (cnt && cnt.n >= DAY_CAP) return bad('full', 429);
       const re = parseInt(b.re, 10) || null;
       let attId = null;
       if (attData) {
-        const ac = await db.prepare('SELECT COUNT(*) AS n FROM att WHERE code=? AND ts>?').bind(code, now - 864e5).first();
+        const ac = await db.prepare('SELECT COUNT(*) AS n FROM att WHERE code=? AND ts>?').bind(room, now - 864e5).first();
         if (ac && ac.n >= ATT_DAY_CAP) return bad('attfull', 429);
         const parts = Math.ceil(attData.length / CHUNK);
-        const r = await db.prepare('INSERT INTO att(code,ts,mime,name,size,parts) VALUES(?,?,?,?,?,?)').bind(code, now, meta.mime, meta.name, meta.size, parts).run();
+        const r = await db.prepare('INSERT INTO att(code,ts,mime,name,size,parts) VALUES(?,?,?,?,?,?)').bind(room, now, meta.mime, meta.name, meta.size, parts).run();
         attId = r.meta && r.meta.last_row_id ? r.meta.last_row_id : (r.lastInsertRowid != null ? Number(r.lastInsertRowid) : null);
-        if (!attId) { const q = await db.prepare('SELECT id FROM att WHERE code=? AND ts=? ORDER BY id DESC LIMIT 1').bind(code, now).first(); attId = q && q.id; }
+        if (!attId) { const q = await db.prepare('SELECT id FROM att WHERE code=? AND ts=? ORDER BY id DESC LIMIT 1').bind(room, now).first(); attId = q && q.id; }
         for (let i = 0; i < parts; i++) await db.prepare('INSERT INTO attc(att,n,data) VALUES(?,?,?)').bind(attId, i, attData.slice(i * CHUNK, (i + 1) * CHUNK)).run();
       }
-      await db.prepare('INSERT INTO msg(code,ts,dev,nick,text,re,kind,att,meta) VALUES(?,?,?,?,?,?,?,?,?)').bind(code, now, dev, nick, text, re, kind || null, attId, meta ? JSON.stringify(meta) : null).run();
+      await db.prepare('INSERT INTO msg(code,ts,dev,nick,text,re,kind,att,meta) VALUES(?,?,?,?,?,?,?,?,?)').bind(room, now, dev, nick, text, re, kind || null, attId, meta ? JSON.stringify(meta) : null).run();
       if (Math.random() < 0.02) {
         const old = now - KEEP_DAYS * 864e5;
         await db.prepare('DELETE FROM msg WHERE ts<?').bind(old).run();
@@ -246,13 +283,15 @@ export default {
         await db.prepare('DELETE FROM att WHERE ts<?').bind(old).run();
       }
       const after = parseInt(b.after, 10) || 0;
-      return J({ ok: true, msgs: await list(db, code, after, dev), now });
+      return J({ ok: true, msgs: await list(db, room, after, dev), now });
     }
     if (act === 'del') {
       const id = parseInt(b.id, 10); if (!id) return bad('id');
-      const m = await db.prepare('SELECT dev,att FROM msg WHERE id=? AND code=?').bind(id, code).first();
+      const room = await roomOf(code, clean(b.with, 8), dev);
+      if (!room) return bad('with');
+      const m = await db.prepare('SELECT dev,att FROM msg WHERE id=? AND code=?').bind(id, room).first();
       if (!m) return bad('gone', 404);
-      if (m.dev !== dev && !(await leaderOk(code, b.pin))) return bad('forbid', 403);
+      if (m.dev !== dev && (room !== code || !(await leaderOk(code, b.pin)))) return bad('forbid', 403);
       await db.prepare('UPDATE msg SET del=1, text=\'\', meta=NULL WHERE id=?').bind(id).run();
       if (m.att) { await db.prepare('DELETE FROM attc WHERE att=?').bind(m.att).run(); await db.prepare('DELETE FROM att WHERE id=?').bind(m.att).run(); }
       return J({ ok: true });

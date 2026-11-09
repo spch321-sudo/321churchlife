@@ -476,6 +476,7 @@ h += '<div class="ccm' + (m.mine ? ' mine' : '') + '" id="ccm' + m.id + '">' +
 (m.del ? '<div class="cct gone">' + esc(CCs('deleted')) + '</div>' :
 (m.kind ? caHtml(m, q) : '<div class="cct" onclick="ccTap(' + m.id + ')">' + (q ? '<div class="ccq">' + esc((q.mine ? CCs('me') : q.nick) + '：' + (q.del ? CCs('deleted') : q.text)) + '</div>' : '') + chLink(m.text) + '</div>')) +
 (sel && !m.del ? '<div class="ccacts"><button onclick="ccReply(' + m.id + ')">↩ ' + esc(CCs('reply')) + '</button><button onclick="ccCopy(' + m.id + ')">' + esc(CCs('copy')) + '</button>' +
+(!m.mine && m.who && window.XJ321 ? '<button onclick="ccDm(\'' + esc(m.who) + '\',' + m.id + ')">✉️ ' + esc(CA('私訊', '私信', 'Message', '개인 메시지')) + '</button>' : '') +
 ((m.mine || adm) ? '<button onclick="ccDel(' + m.id + ')">' + esc(CC.arm === m.id ? CCs('armDel') : CCs('del')) + '</button>' : '') + '</div>' : '') +
 '</div><div class="cctime">' + (m.kind && !m.del ? '<button class="camore" onclick="ccTap(' + m.id + ')" aria-label="more">⋯</button>' : '') + ccTime(m.ts) + '</div></div>';
 });
@@ -497,7 +498,7 @@ if (ft) document.documentElement.style.setProperty('--ccft', (ft.getBoundingClie
 function vChChat() {
 if (!S.ch) return back();
 ccCss();
-var h = topbar(S.ch.name + ' · ' + CCs('room'), true, '<button class="ib" onclick="ccPull(1)" aria-label="refresh">⟳</button>');
+var h = topbar(S.ch.name + ' · ' + CCs('room'), true, (window.XJ321 ? '<button class="ib" onclick="ccInbox()" aria-label="private messages">✉️</button>' : '') + '<button class="ib" onclick="ccPull(1)" aria-label="refresh">⟳</button>');
 h += '<div class="cctip">' + esc(CCs('tip')) + '</div><div class="cclist" id="ccList"></div>';
 var q = CC.re ? ccFind(CC.re) : null;
 h += '<div class="ccft" id="ccFt"><div class="in">' +
@@ -533,6 +534,9 @@ var before = CC.last; ccMerge(j.msgs);
 if (full || CC.last !== before) ccPaint(full);
 });
 }
+/* 私訊（church-chat v6）：借用小家聊天室的介面，代碼是教會代碼，只有兩個人看得到 */
+function ccDm(who, id) { var m = ccFind(id); if (!m || !window.XJ321) return; CC.sel = 0; XJ321.dm(S.ch.code, S.ch.name, who, m.nick); }
+function ccInbox() { if (window.XJ321) XJ321.inbox(S.ch.code, S.ch.name); }
 function ccTap(id) { CC.sel = CC.sel === id ? 0 : id; CC.arm = 0; ccPaint(); }
 function ccReply(id) { CC.re = id; CC.sel = 0; vChChat(); var ta = $('#ccIn'); if (ta) ta.focus(); }
 function ccCopy(id) {
@@ -937,6 +941,7 @@ window.X321.xj = {
   nTr: function (t, b, cb) { if (window.chTr) chTr(t, b, cb); else cb(null); },
   wordZh: '靈修', wordEn: 'devotion', autoDone: true,
   myName: function () { return trim(S.name || ''); },
+  altDev: function (code) { return S.ch && S.ch.code === code ? (S.ch.dev || '') : ''; },
   didToday: function () { return chDidToday(); },
   goRead: function () { var n = window.nextLesson ? nextLesson() : null; if (n) open_({ t: 'lesson', w: n.w, d: n.d }); else go('course'); }
 };
