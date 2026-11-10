@@ -4,8 +4,8 @@
    ‧ activate：刪舊快取、clients.claim，並通知所有頁面；背景中的舊頁面直接重新導向成新版
      （連「沒有更新程式碼的舊版頁面」也能被帶到新版）
    ‧ fetch：HTML／JS／JSON 網路優先（no-cache），離線才用快取；圖片快取優先；影音不攔截（Range 請求） */
-var V = 'cl321-1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109-nv1109-ln1109-wa1110-em1110-ff1110-oz1110-nf1110-xa1110';
-var VER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109-nv1109-ln1109-wa1110-em1110-ff1110-oz1110-nf1110-xa1110';   /* 必須與 index.html 的 APPVER、version.json 完全一致，否則「已有新版本」會一直跳 */
+var V = 'cl321-1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109-nv1109-ln1109-wa1110-em1110-ff1110-oz1110-nf1110-xa1110-fs1110';
+var VER = '1.2.202610252246-chen-cr1031-ws3-fs1103-xz1103-au1103-xzm1103-rf1105-fw1105hko-cc1109-cg1109-td1109-at1109-pf1109-np1109-sv1109-xj1109-ct1109-hb1109-tm1109-ub1109-dm1109-sh1109-rc1109-nt1109-nv1109-ln1109-wa1110-em1110-ff1110-oz1110-nf1110-xa1110-fs1110';   /* 必須與 index.html 的 APPVER、version.json 完全一致，否則「已有新版本」會一直跳 */
 var SHELL = ['./', './index.html', './xzpar.js', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './hero-s.jpg', './c-zh-s1.json', './t-zh.json', './lang-zs.json', './lang-en.json', './lang-ko.json', './media.js', './more.js', './xj.js', './peerjs.min.js', './qrcode.js', "./xz2.js", "./xzm.js"];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
