@@ -30,7 +30,8 @@
         ② 小家可以登記「從這個小家長出來的 235 團隊」：POST /c/小家代碼/link、GET /c/小家代碼/links。
         ③ 關懷名單多記每個人有沒有 2（屬靈同伴）、3（屬靈父母兒女）、5（五重團隊）的關係（t2／t3／t5，只是數量）。
         一樣只要重新貼上、Deploy，不必新增任何綁定。
-   v8（2026-11-09）：表情回應 POST /react；公告 POST /pin（小家／教會要家長或負責人密碼，團隊與私訊人人可設）；
+   v8（2026-11-09，11-10 補）：TMNW 開頭房間＝最新消息附件，不過期；附件回應拿掉 CSP sandbox。
+        表情回應 POST /react；公告 POST /pin（小家／教會要家長或負責人密碼，團隊與私訊人人可設）；
         投票與挑日子（kind=poll，POST /vote，發起人可結束）；位置（kind=loc）；活動（kind=evt）；搜尋 GET /search?q=。
         /msgs 與 /send 多回：rx（表情）、vt（投票）、pc（已結束的投票）、lo（這批資料涵蓋的最小訊息編號）、pin（目前公告）。
    v7（2026-11-09）：收回與無痕收回。/del 帶 hide:1（只限自己的訊息）＝無痕收回（del=2，清單裡完全不出現）；
@@ -340,9 +341,10 @@ export default {
       await db.prepare('INSERT INTO msg(code,ts,dev,nick,text,re,kind,att,meta) VALUES(?,?,?,?,?,?,?,?,?)').bind(room, now, dev, nick, text, re, kind || null, attId, meta ? JSON.stringify(meta) : null).run();
       if (Math.random() < 0.02) {
         const old = now - KEEP_DAYS * 864e5;
-        await db.prepare('DELETE FROM msg WHERE ts<?').bind(old).run();
-        await db.prepare('DELETE FROM attc WHERE att IN (SELECT id FROM att WHERE ts<?)').bind(old).run();
-        await db.prepare('DELETE FROM att WHERE ts<?').bind(old).run();
+        /* TMNW 開頭的房間是「最新消息附件」，不隨聊天記錄過期刪除 */
+        await db.prepare("DELETE FROM msg WHERE ts<? AND code NOT LIKE 'TMNW%'").bind(old).run();
+        await db.prepare("DELETE FROM attc WHERE att IN (SELECT id FROM att WHERE ts<? AND code NOT LIKE 'TMNW%')").bind(old).run();
+        await db.prepare("DELETE FROM att WHERE ts<? AND code NOT LIKE 'TMNW%'").bind(old).run();
         await db.prepare('DELETE FROM rx WHERE ts<?').bind(old).run();
         await db.prepare('DELETE FROM vote WHERE ts<?').bind(old).run();
       }
