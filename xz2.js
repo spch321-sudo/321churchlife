@@ -34,11 +34,11 @@
   const LSK = () => (O.pfx || '') + 'xz2';
   const lg = () => {
     let v = ''; try { v = String(O.lang ? O.lang() : (document.documentElement.getAttribute('lang') || 'zh')); } catch (e) {}
-    if (/^(en|ko)/i.test(v)) return 'en';
+    if (/^(en|ko|ja|id|ceb)/i.test(v)) return 'en';
     if (/hans|^zs$|^sc$|cn$|^zh-sg/i.test(v)) return 'zs';
     return 'zh';
   };
-  const isKo = () => { try { return document.documentElement.getAttribute('lang') === 'ko'; } catch (e) { return false; } };
+  const isKo = () => { try { return !!(window.XLS && window.XLS[document.documentElement.getAttribute('lang')]); } catch (e) { return false; } };
   const L3 = (a, b, c) => { const l = lg(); return l === 'en' ? (window.KOT ? window.KOT(c) : c) : (l === 'zs' ? b : a); };
   const KX = (k, t) => { const o = window.KOXZ; return (isKo() && o && o[k]) ? o[k] : null; };
   const toast = (m, ms) => { try { if (O.toast) return O.toast(m, ms); } catch (e) {} miniToast(m); };

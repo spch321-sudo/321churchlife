@@ -116,7 +116,8 @@ var CHT = {"zh": {"myChurch": "我的教會", "joinHint": "加入教會，和弟
 var CHK = ['news', 'meet', 'event', 'pray'];
 var CH = { f: '', busy: 0, armDel: '', armLeave: 0, at: 0 };
 function CT(k) {
-var d = CHT[L()] || CHT.zh, s = d[k];
+var xp = window.XLS && XLS[L()] && window.I18N && I18N[L()] && I18N[L()].CHT, d = CHT[L()] || xp || CHT.zh, s = d[k];
+if (s == null && xp) s = CHT.en[k];
 if (s == null) s = CHT.zh[k];
 if (s == null) s = k;
 for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
@@ -395,7 +396,7 @@ zs: { room: '教会聊天室', roomD: '和同一个教会的弟兄姐妹聊天�
 en: { room: 'Church chat', roomD: 'Chat, share and pray for one another with your church family', open: 'Open chat', newN: '{0} new', ph: 'Say something…', send: 'Send', nickPh: 'Your name (everyone will see it)', nickNeed: 'Please enter your name first', empty: 'No messages yet — say hello!', reply: 'Reply', copy: 'Copy', copied: 'Copied', del: 'Delete', armDel: 'Tap again to delete', deleted: 'This message was unsent', replyTo: 'Replying to {0}', cancel: 'Cancel', me: 'Me', today: 'Today', yest: 'Yesterday', notReady: 'The chat isn’t switched on yet. Please ask your leader to contact the administrator.', e_net: 'Can’t reach the chat. Please try again later.', e_slow: 'Too fast — wait a moment', e_full: 'Too many messages today — let’s continue tomorrow', e_forbid: 'You can only delete your own messages', e_empty: 'Please type a message', e_nochurch: 'This church can’t be found', tip: 'Be kind and speak the truth in love; take care with private matters and prayer details. Leaders can remove inappropriate messages.', leader: 'Leader' },
 ko: { room: '교회 대화방', roomD: '같은 교회 형제자매와 이야기하고 나누며 서로 기도해요', open: '대화방 들어가기', newN: '새 메시지 {0}', ph: '메시지를 입력하세요…', send: '보내기', nickPh: '내 이름 (모두에게 보여요)', nickNeed: '먼저 이름을 입력해 주세요', empty: '아직 메시지가 없어요. 먼저 인사해 보세요!', reply: '답장', copy: '복사', copied: '복사했어요', del: '삭제', armDel: '한 번 더 누르면 삭제돼요', deleted: '취소된 메시지예요', replyTo: '{0}님에게 답장', cancel: '취소', me: '나', today: '오늘', yest: '어제', notReady: '대화방이 아직 열리지 않았어요. 리더에게 관리자에게 연락해 달라고 해 주세요.', e_net: '대화방에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.', e_slow: '너무 빨라요. 잠시 후 보내 주세요', e_full: '오늘은 메시지가 너무 많아요. 내일 이어서 이야기해요', e_forbid: '내 메시지만 삭제할 수 있어요', e_empty: '내용을 입력해 주세요', e_nochurch: '교회를 찾을 수 없어요', tip: '서로 존중하고 사랑 안에서 참된 것을 말해요. 개인 정보와 기도 제목은 신중하게 나눠 주세요. 리더는 부적절한 메시지를 삭제할 수 있어요.', leader: '리더' }
 };
-function CCs(k, a) { var d = CCT[L()] || CCT.zh, s = d[k]; if (s == null) s = CCT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
+function CCs(k, a) { var xp = window.XLS && XLS[L()] && window.I18N && I18N[L()] && I18N[L()].CCT, d = CCT[L()] || xp || CCT.zh, s = d[k]; if (s == null && xp) s = CCT.en[k]; if (s == null) s = CCT.zh[k]; if (s == null) s = k; return a == null ? s : String(s).replace('{0}', a); }
 function ccErr(e) { if (e === 'badpin') return CT('e_badpin'); if (e === 'http404' || e === 'nodb' || e === 'notfound') return CCs('notReady'); return CCs('e_' + e) !== 'e_' + e ? CCs('e_' + e) : CCs('e_net'); }
 function ccApi(m, path, body, cb) {
 ajax(m, CCURL + path, body, null, function (st, txt) {
@@ -595,7 +596,8 @@ var ta = $('#ccIn'), text = trim(ta ? ta.value : ''); if (!text) return toast(CC
 ccPost({ text: text }, function () { CC.draft = ''; var t2 = $('#ccIn'); if (t2) { t2.value = ''; ccGrow(t2); } });
 }
 /* ── 聊天室：相片、檔案、貼圖、語音（v2，2026-11-09；後端 church-chat v4） ── */
-function CA(zh, zs, en, ko) { var l = L(); return l === 'en' ? en : l === 'zs' ? zs : l === 'ko' ? (ko || en) : zh; }
+function XM(en) { var p = window.I18N && I18N[L()], m = p && p.MORE; return (m && m[en]) || en; }
+function CA(zh, zs, en, ko) { var l = L(); if (l === 'ja' || l === 'id' || l === 'ceb') return XM(en); return l === 'en' ? en : l === 'zs' ? zs : l === 'ko' ? (ko || en) : zh; }
 var CA_STK = [
 ['amen', '🙏', '阿們', '阿们', 'Amen', '아멘', '#F6E7B4', '#7A5800'], ['halle', '🙌', '哈利路亞', '哈利路亚', 'Hallelujah', '할렐루야', '#FFE1C6', '#A4481A'],
 ['thanks', '💐', '感謝主', '感谢主', 'Thank the Lord', '주님 감사해요', '#FBE4E9', '#A33A55'], ['pray', '🕊️', '為你禱告', '为你祷告', 'Praying for you', '기도할게요', '#E1EBF7', '#2F5C93'],
@@ -899,7 +901,7 @@ function chReward(rank, list) {
 tdCss();
 var old = $('#rwBox'); if (old) old.parentNode.removeChild(old);
 var nm = trim(S.name) || '', d = TDT[L()] || TDT.zh, seed = new Date().getDate() + (rank || 0);
-var cheer = d.cheers[seed % d.cheers.length].replace('{0}', nm || (L() === 'en' ? 'friend' : L() === 'ko' ? '형제자매' : '弟兄姊妹'));
+var cheer = d.cheers[seed % d.cheers.length].replace('{0}', nm || (L() === 'en' ? 'friend' : XLS[L()] ? XLC[L()].friend : '弟兄姊妹'));
 var v = d.verses[(seed + 2) % d.verses.length];
 var others = [];
 eachA(list || [], function (m) { if (m.nick && m.nick !== nm && others.length < 8) others.push(m.nick); });
@@ -960,8 +962,8 @@ window.X321.xj = {
   render: function (r) { if (R.page && R.page.t === r) render(); },
   route: function () { return R.page ? R.page.t : ''; },
   wrapRender: function (f) { XJR.after = f; },
-  f9: function (zh, en) { var l = L(); if (l === 'en' || l === 'ko') return en || zh; if (l === 'zs') return xjZs(zh); return zh; },
-  esc: esc, note: function (m) { toast(m); }, lang: function () { var l = L(); return l === 'en' || l === 'ko' ? 'en' : (l === 'zs' ? 'zh-Hans' : 'zh-Hant'); },
+  f9: function (zh, en) { var l = L(); if (l === 'ja' || l === 'id' || l === 'ceb') return XM(en || zh); if (l === 'en' || l === 'ko') return en || zh; if (l === 'zs') return xjZs(zh); return zh; },
+  esc: esc, note: function (m) { toast(m); }, lang: function () { var l = L(); return l === 'en' || XLS[l] ? 'en' : (l === 'zs' ? 'zh-Hans' : 'zh-Hant'); },
   pageHead: function (eb, title, sub) { return '<p class="eyebrow" style="margin:4px 2px 2px">' + esc(eb) + '</p><div class="h2" style="margin:0 2px 2px">' + esc(title) + '</div>' + (sub ? '<p class="sm muted" style="margin:0 2px 10px">' + esc(sub) + '</p>' : ''); },
   sect: function (n, title) { return '<p class="eyebrow" style="margin:18px 2px 8px">' + esc(title) + '</p>'; },
   rowlink: function () { return ''; }, simp: function () { },
@@ -991,8 +993,8 @@ var c = $('#chCard'); if (c) c.innerHTML = chHomeHtml();
 }
 /* 底部「教會」分頁：我的教會＋我的小家 */
 function vChTab() {
-var l = L(), en = l === 'en' || l === 'ko', zs = l === 'zs';
-var tx = function (zh, e, k) { return l === 'ko' && k ? k : (en ? e : (zs ? xjZs(zh) : zh)); };
+var l = L(), en = l === 'en' || !!XLS[l], zs = l === 'zs';
+var tx = function (zh, e, k) { if (l === 'ja' || l === 'id' || l === 'ceb') return XM(e); return l === 'ko' && k ? k : (en ? e : (zs ? xjZs(zh) : zh)); };
 var h = topbar(tx('教會', 'Church', '교회'));
 h += '<p class="eyebrow" style="margin:6px 2px 4px">⛪ ' + esc(tx('我的教會', 'My church', '나의 교회')) + '</p>';
 if (S.ch) h += '<div id="chCard">' + chHomeHtml() + '</div>' + (window.tdMeLine ? tdMeLine() : '');
@@ -1013,13 +1015,13 @@ if (S.ch && window.tdFetch) tdFetch(false, function () { var el = $('#chCard'); 
 }
 function xjView(t) {
   var f = XJR.pages[t]; if (!f) return loading('🏡', 1);
-  var ti = t === 'xjchat' ? '' : (t === 'xjcare' ? (L() === 'en' || L() === 'ko' ? 'Care list' : (L() === 'zs' ? '关怀名单' : '關懷名單')) : (L() === 'en' || L() === 'ko' ? 'My Small Group' : '我的小家'));
+  var ti = t === 'xjchat' ? '' : (t === 'xjcare' ? (XLS[L()] ? XM('Care list') : L() === 'en' ? 'Care list' : (L() === 'zs' ? '关怀名单' : '關懷名單')) : (XLS[L()] ? XM('My Small Group') : L() === 'en' ? 'My Small Group' : '我的小家'));
   $('#app').innerHTML = topbar(ti, true) + '<div id="view" class="xjv">' + f() + '</div>';
   if (t === 'xjchat') { var fab = $('#fab'); if (fab) fab.style.display = 'none'; }
   try { if (XJR.after) XJR.after(t); } catch (e) { }
 }
 function xjEntryHtml() {
-  var X = window.XJ321 && XJ321.state(), G = (window.XJ321 && XJ321.groups()) || [], en = L() === 'en' || L() === 'ko', zs = L() === 'zs';
+  var X = window.XJ321 && XJ321.state(), G = (window.XJ321 && XJ321.groups()) || [], en = L() === 'en' || !!XLS[L()], zs = L() === 'zs';
   var t1 = en ? 'My Small Group' : '我的小家';
   var t2 = X ? X.name + (G.length > 1 ? (en ? ' (+' + (G.length - 1) + ' more)' : (zs ? xjZs('等 ' + G.length + ' 個小家') : '等 ' + G.length + ' 個小家')) : '') + (en ? ' · news, chat, prayer' : (zs ? ' · 消息、聊天室、彼此代祷' : ' · 消息、聊天室、彼此代禱'))
     : (en ? 'Create or join a small group — chat and pray together' : (zs ? '建立或加入小家，一起聊天、彼此代祷' : '建立或加入小家，一起聊天、彼此代禱'));

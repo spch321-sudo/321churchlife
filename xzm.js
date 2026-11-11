@@ -1354,7 +1354,7 @@ XZM.preset.mix2 = function (o) {
       try {
         if (!window.speechSynthesis) return done();
         var u = new SpeechSynthesisUtterance(text), l = g(function () { return L(); }, 'zh');
-        u.lang = document.documentElement.getAttribute('lang') === 'ko' ? 'ko-KR' : l === 'en' ? 'en-US' : (l === 'zs' ? 'zh-CN' : 'zh-TW'); u.rate = 1;
+        u.lang = (window.XLS && window.XLS[document.documentElement.getAttribute('lang')]) ? window.XLC[document.documentElement.getAttribute('lang')].bcp : l === 'en' ? 'en-US' : (l === 'zs' ? 'zh-CN' : 'zh-TW'); u.rate = 1;
         u.onend = u.onerror = function () { done(); };
         speechSynthesis.speak(u);
       } catch (e) { done(); }
