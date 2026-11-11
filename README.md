@@ -8,6 +8,12 @@
 
 
 
+## …-xl1111（新增日文、印尼文、Cebuano）
+- 語言新增 日本語、Bahasa Indonesia、Cebuano：介面、52 週課程、工具箱（彼此卡片、恩賜、和好、聖靈果子、服侍之路）、教會與小家、教會聊天室、小智、自動更新提示都已翻譯。
+- 課程經文與金句全部取自 321互動聖經同語言的經文：日文 口語訳聖書（1955）、印尼文 Alkitab Yang Terbuka (AYT)、Cebuano Balaan nga Bibliya／Ang Pulong sa Dios；文中引用的經文也逐字照這些譯本。印尼文使徒行傳 4:30 在互動聖經資料中缺節，課程同樣略過。
+- 並讀（第二語言）可選這三種語言；朗讀聲音：日文 Keita／Nanami／Daichi，印尼文 Ardi／Gadis，Cebuano 用菲律賓語聲音 Angelo／Blessica。
+- 程式上以 `XLS`／`XLC` 統一處理「非中英」語言（韓、日、印尼、Cebuano），語言包的 TOOLS／XZ2／CHT／CCT／MORE 對照表在切換語言時重新掛上。
+
 ## …-nv1109（更新提示不再顯示版本字串）
 - 自動更新完成後只顯示「已更新到最新版本」，不再顯示一長串版本號。
 
