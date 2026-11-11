@@ -570,7 +570,7 @@ if (R.tab === 'me') return vMe();
 }
 function drawTabs() {
 var tabs = ['today', 'course', 'one', 'chtab', 'serve', 'me'], h = '';
-var CHTAB_L = { zh: '教會', zs: '教会', en: 'Church', ko: '교회' };
+var CHTAB_L = { zh: '教會', zs: '教会', en: 'Church', ko: '교회', ja: '教会', id: 'Gereja', ceb: 'Simbahan' };
 for (var i = 0; i < tabs.length; i++) h += '<button class="' + (R.tab === tabs[i] && !R.page ? 'on' : '') + '" onclick="go(\'' + tabs[i] + '\')">' + IC[tabs[i]] + '<span>' + esc(tabs[i] === 'chtab' ? (CHTAB_L[L()] || CHTAB_L.zh) : T('tab_' + tabs[i])) + '</span></button>';
 $('#tabbar').innerHTML = h;
 $('#fab').textContent = T('xzBtn');
